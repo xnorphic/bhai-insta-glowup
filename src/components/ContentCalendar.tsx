@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { CalendarDays, Sparkles, Save, Plus, Star, Clock, MapPin } from "lucide-react";
 import { format } from "date-fns";
+import { Database } from "@/integrations/supabase/types";
 
 interface ImportantDate {
   id: string;
@@ -26,9 +26,9 @@ interface ImportantDate {
 interface CalendarEvent {
   id: string;
   event_date: string;
-  platform: string;
-  content_type: string;
-  post_category: string;
+  platform: Database['public']['Enums']['platform_type'];
+  content_type: Database['public']['Enums']['calendar_content_type'];
+  post_category: Database['public']['Enums']['post_category'];
   user_input_focus?: string;
   ai_generated_post_ideas: string;
   ai_generated_captions?: any;
@@ -46,9 +46,9 @@ export const ContentCalendar = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   
   // Form states
-  const [platform, setPlatform] = useState("instagram");
-  const [contentType, setContentType] = useState("post");
-  const [postCategory, setPostCategory] = useState("festival");
+  const [platform, setPlatform] = useState<Database['public']['Enums']['platform_type']>("instagram");
+  const [contentType, setContentType] = useState<Database['public']['Enums']['calendar_content_type']>("post");
+  const [postCategory, setPostCategory] = useState<Database['public']['Enums']['post_category']>("festival");
   const [userFocus, setUserFocus] = useState("");
   
   const { user } = useAuth();
@@ -284,7 +284,7 @@ export const ContentCalendar = () => {
               </div>
               
               <div className="space-y-3">
-                <Select value={platform} onValueChange={setPlatform}>
+                <Select value={platform} onValueChange={(value: Database['public']['Enums']['platform_type']) => setPlatform(value)}>
                   <SelectTrigger className="bg-white/10 border-white/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -296,7 +296,7 @@ export const ContentCalendar = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={contentType} onValueChange={setContentType}>
+                <Select value={contentType} onValueChange={(value: Database['public']['Enums']['calendar_content_type']) => setContentType(value)}>
                   <SelectTrigger className="bg-white/10 border-white/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -309,7 +309,7 @@ export const ContentCalendar = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={postCategory} onValueChange={setPostCategory}>
+                <Select value={postCategory} onValueChange={(value: Database['public']['Enums']['post_category']) => setPostCategory(value)}>
                   <SelectTrigger className="bg-white/10 border-white/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
