@@ -92,13 +92,41 @@ serve(async (req) => {
         })
 
         console.log('StarAPI user response status:', userResponse.status)
+        console.log('StarAPI user response headers:', JSON.stringify(Object.fromEntries(userResponse.headers.entries())))
         
         if (!userResponse.ok) {
           const errorText = await userResponse.text()
           console.error('StarAPI user fetch failed:', userResponse.status, errorText)
+          
+          // Check for specific API subscription errors
+          if (userResponse.status === 403) {
+            const errorData = JSON.parse(errorText)
+            if (errorData.message?.includes('not subscribed')) {
+              return new Response(JSON.stringify({ 
+                error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint. Please check your RapidAPI dashboard.',
+                details: errorText,
+                suggestion: 'Verify your StarAPI subscription status at https://rapidapi.com/hub'
+              }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              })
+            }
+          }
+          
+          if (userResponse.status === 429) {
+            return new Response(JSON.stringify({ 
+              error: 'Rate limit exceeded. Please wait a moment before trying again.',
+              details: errorText
+            }), {
+              status: 429,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+          }
+
           return new Response(JSON.stringify({ 
             error: `Failed to fetch Instagram profile data. Status: ${userResponse.status}`,
-            details: errorText
+            details: errorText,
+            suggestion: userResponse.status === 404 ? 'Profile not found. Please check the username.' : 'Please try again later.'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -112,8 +140,9 @@ serve(async (req) => {
         if (!userData || !userData.username) {
           console.error('Invalid user data received:', userData)
           return new Response(JSON.stringify({ 
-            error: 'Invalid profile data received. Please check the username and try again.',
-            received_data: userData
+            error: 'Invalid profile data received. The username may not exist or be private.',
+            received_data: userData,
+            suggestion: 'Please verify the Instagram username is correct and the profile is public.'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -159,7 +188,8 @@ serve(async (req) => {
         console.error('API call error:', apiError)
         return new Response(JSON.stringify({ 
           error: 'Failed to connect to Instagram API',
-          details: apiError.message
+          details: apiError.message,
+          suggestion: 'Please check your internet connection and try again.'
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -183,6 +213,21 @@ serve(async (req) => {
         if (!mediaResponse.ok) {
           const errorText = await mediaResponse.text()
           console.error('StarAPI media fetch failed:', mediaResponse.status, errorText)
+          
+          if (mediaResponse.status === 403) {
+            const errorData = JSON.parse(errorText)
+            if (errorData.message?.includes('not subscribed')) {
+              return new Response(JSON.stringify({ 
+                error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint.',
+                details: errorText,
+                suggestion: 'Please check your RapidAPI dashboard and subscription status.'
+              }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              })
+            }
+          }
+
           return new Response(JSON.stringify({ 
             error: `Failed to fetch Instagram media data. Status: ${mediaResponse.status}`,
             details: errorText
