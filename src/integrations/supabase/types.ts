@@ -9,16 +9,319 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      api_usage_logs: {
+        Row: {
+          api_key_used: string | null
+          api_name: Database["public"]["Enums"]["api_name"]
+          cost_in_units: number | null
+          endpoint_called: string
+          error_message: string | null
+          id: string
+          is_error: boolean
+          request_payload: Json | null
+          request_timestamp: string
+          response_data: Json | null
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          api_key_used?: string | null
+          api_name: Database["public"]["Enums"]["api_name"]
+          cost_in_units?: number | null
+          endpoint_called: string
+          error_message?: string | null
+          id?: string
+          is_error?: boolean
+          request_payload?: Json | null
+          request_timestamp?: string
+          response_data?: Json | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          api_key_used?: string | null
+          api_name?: Database["public"]["Enums"]["api_name"]
+          cost_in_units?: number | null
+          endpoint_called?: string
+          error_message?: string | null
+          id?: string
+          is_error?: boolean
+          request_payload?: Json | null
+          request_timestamp?: string
+          response_data?: Json | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_books: {
+        Row: {
+          ai_generated_playbook: string | null
+          ai_summary_json: Json | null
+          file_url: string
+          id: string
+          original_filename: string
+          playbook_start_year: number | null
+          posts_scanned_for_playbook: number
+          upload_timestamp: string
+          uploaded_by_username: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          ai_generated_playbook?: string | null
+          ai_summary_json?: Json | null
+          file_url: string
+          id?: string
+          original_filename: string
+          playbook_start_year?: number | null
+          posts_scanned_for_playbook?: number
+          upload_timestamp?: string
+          uploaded_by_username: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          ai_generated_playbook?: string | null
+          ai_summary_json?: Json | null
+          file_url?: string
+          id?: string
+          original_filename?: string
+          playbook_start_year?: number | null
+          posts_scanned_for_playbook?: number
+          upload_timestamp?: string
+          uploaded_by_username?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_books_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_calendar_events: {
+        Row: {
+          ai_generated_captions: Json | null
+          ai_generated_image_prompts: string | null
+          ai_generated_post_ideas: string
+          ai_reasoning: string
+          content_type: Database["public"]["Enums"]["calendar_content_type"]
+          creation_timestamp: string
+          event_date: string
+          id: string
+          is_saved: boolean
+          platform: Database["public"]["Enums"]["platform_type"]
+          post_category: Database["public"]["Enums"]["post_category"]
+          user_id: string
+          user_input_focus: string | null
+        }
+        Insert: {
+          ai_generated_captions?: Json | null
+          ai_generated_image_prompts?: string | null
+          ai_generated_post_ideas: string
+          ai_reasoning: string
+          content_type: Database["public"]["Enums"]["calendar_content_type"]
+          creation_timestamp?: string
+          event_date: string
+          id?: string
+          is_saved?: boolean
+          platform: Database["public"]["Enums"]["platform_type"]
+          post_category: Database["public"]["Enums"]["post_category"]
+          user_id: string
+          user_input_focus?: string | null
+        }
+        Update: {
+          ai_generated_captions?: Json | null
+          ai_generated_image_prompts?: string | null
+          ai_generated_post_ideas?: string
+          ai_reasoning?: string
+          content_type?: Database["public"]["Enums"]["calendar_content_type"]
+          creation_timestamp?: string
+          event_date?: string
+          id?: string
+          is_saved?: boolean
+          platform?: Database["public"]["Enums"]["platform_type"]
+          post_category?: Database["public"]["Enums"]["post_category"]
+          user_id?: string
+          user_input_focus?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_calendar_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_content: {
+        Row: {
+          ai_performance_summary: string | null
+          ai_sentiment_summary: string | null
+          alt_text: string | null
+          audio_used: string | null
+          caption: string | null
+          content_link: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          id: string
+          instagram_media_id: string
+          is_boosted: boolean
+          last_refreshed_at: string
+          location_id: number | null
+          location_name: string | null
+          performance_category:
+            | Database["public"]["Enums"]["performance_category"]
+            | null
+          post_date: string
+          thumbnail_url: string
+          total_comments: number
+          total_likes: number
+          total_shares: number
+          total_views: number
+          tracked_profile_id: string
+        }
+        Insert: {
+          ai_performance_summary?: string | null
+          ai_sentiment_summary?: string | null
+          alt_text?: string | null
+          audio_used?: string | null
+          caption?: string | null
+          content_link: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          instagram_media_id: string
+          is_boosted?: boolean
+          last_refreshed_at: string
+          location_id?: number | null
+          location_name?: string | null
+          performance_category?:
+            | Database["public"]["Enums"]["performance_category"]
+            | null
+          post_date: string
+          thumbnail_url: string
+          total_comments?: number
+          total_likes?: number
+          total_shares?: number
+          total_views?: number
+          tracked_profile_id: string
+        }
+        Update: {
+          ai_performance_summary?: string | null
+          ai_sentiment_summary?: string | null
+          alt_text?: string | null
+          audio_used?: string | null
+          caption?: string | null
+          content_link?: string
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          instagram_media_id?: string
+          is_boosted?: boolean
+          last_refreshed_at?: string
+          location_id?: number | null
+          location_name?: string | null
+          performance_category?:
+            | Database["public"]["Enums"]["performance_category"]
+            | null
+          post_date?: string
+          thumbnail_url?: string
+          total_comments?: number
+          total_likes?: number
+          total_shares?: number
+          total_views?: number
+          tracked_profile_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          connected_instagram_profiles: Json
+          created_at: string
+          current_subscription_status: Database["public"]["Enums"]["subscription_status"]
+          id: string
+          is_admin: boolean
+          last_login_at: string | null
+          profile_picture_url: string | null
+          subscription_expiry_date: string | null
+          subscription_start_date: string | null
+          username: string
+        }
+        Insert: {
+          connected_instagram_profiles?: Json
+          created_at?: string
+          current_subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          id: string
+          is_admin?: boolean
+          last_login_at?: string | null
+          profile_picture_url?: string | null
+          subscription_expiry_date?: string | null
+          subscription_start_date?: string | null
+          username: string
+        }
+        Update: {
+          connected_instagram_profiles?: Json
+          created_at?: string
+          current_subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          id?: string
+          is_admin?: boolean
+          last_login_at?: string | null
+          profile_picture_url?: string | null
+          subscription_expiry_date?: string | null
+          subscription_start_date?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      user_has_instagram_profile: {
+        Args: { profile_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      api_name: "OpenAI" | "StarAPI"
+      calendar_content_type:
+        | "post"
+        | "reel"
+        | "story"
+        | "carousel"
+        | "video"
+        | "short"
+      content_type: "post" | "reel" | "carousel" | "story" | "highlight"
+      performance_category: "Green" | "Amber" | "Red"
+      platform_type: "twitter" | "linkedin" | "youtube" | "instagram"
+      post_category:
+        | "festival"
+        | "launch"
+        | "branding"
+        | "educational"
+        | "meme"
+        | "topical"
+      subscription_status: "active" | "expired" | "trial" | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +436,28 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      api_name: ["OpenAI", "StarAPI"],
+      calendar_content_type: [
+        "post",
+        "reel",
+        "story",
+        "carousel",
+        "video",
+        "short",
+      ],
+      content_type: ["post", "reel", "carousel", "story", "highlight"],
+      performance_category: ["Green", "Amber", "Red"],
+      platform_type: ["twitter", "linkedin", "youtube", "instagram"],
+      post_category: [
+        "festival",
+        "launch",
+        "branding",
+        "educational",
+        "meme",
+        "topical",
+      ],
+      subscription_status: ["active", "expired", "trial", "paused"],
+    },
   },
 } as const
