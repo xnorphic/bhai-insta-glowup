@@ -33,7 +33,7 @@ const Index = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[hsl(232,98%,95%)] to-[hsl(232,98%,90%)]">
       <div className="flex w-full">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="flex-1 p-6">
           {renderActiveComponent()}
         </main>
