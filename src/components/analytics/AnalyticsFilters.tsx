@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
+import type { DateRange } from "react-day-picker";
 import type { AnalyticsFilters as Filters } from "@/services/instagramService";
 
 interface AnalyticsFiltersProps {
@@ -16,11 +17,11 @@ interface AnalyticsFiltersProps {
 }
 
 export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }: AnalyticsFiltersProps) => {
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
-    if (range.from && range.to) {
+    if (range?.from && range?.to) {
       onFiltersChange({
         ...filters,
         dateRange: {
@@ -28,7 +29,7 @@ export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }
           end: range.to.toISOString(),
         }
       });
-    } else if (!range.from && !range.to) {
+    } else {
       const newFilters = { ...filters };
       delete newFilters.dateRange;
       onFiltersChange(newFilters);
@@ -116,7 +117,7 @@ export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? (
+                {dateRange?.from ? (
                   dateRange.to ? (
                     <>
                       {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
@@ -147,7 +148,7 @@ export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }
             size="sm"
             onClick={() => {
               onFiltersChange({});
-              setDateRange({});
+              setDateRange(undefined);
             }}
             className="text-red-600 hover:text-red-700"
           >
