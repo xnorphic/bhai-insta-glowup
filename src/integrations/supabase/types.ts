@@ -168,6 +168,36 @@ export type Database = {
           },
         ]
       }
+      important_dates: {
+        Row: {
+          created_at: string
+          date_month: string
+          id: string
+          is_fixed_date: boolean | null
+          name: string
+          occasion_type: string
+          region_notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_month: string
+          id?: string
+          is_fixed_date?: boolean | null
+          name: string
+          occasion_type: string
+          region_notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_month?: string
+          id?: string
+          is_fixed_date?: boolean | null
+          name?: string
+          occasion_type?: string
+          region_notes?: string | null
+        }
+        Relationships: []
+      }
       instagram_connections: {
         Row: {
           access_token: string
