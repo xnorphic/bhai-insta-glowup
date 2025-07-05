@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Instagram, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Instagram, Plus, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 interface InstagramConnection {
   id: string;
@@ -20,7 +23,9 @@ interface InstagramConnection {
 
 export const InstagramConnect = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [username, setUsername] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Fetch user's Instagram connections
@@ -42,52 +47,100 @@ export const InstagramConnect = () => {
     enabled: !!user,
   });
 
-  // Mock Instagram connection - In a real app, this would handle OAuth flow
+  // Connect Instagram profile using StarAPI
   const connectInstagram = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('User not authenticated');
+    mutationFn: async (instagramUsername: string) => {
+      if (!user || !instagramUsername.trim()) {
+        throw new Error('Username is required');
+      }
       
-      // Simulate OAuth flow delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock Instagram data - In production, this would come from Instagram API
-      const mockInstagramData = {
-        user_id: user.id,
-        instagram_user_id: `ig_${Date.now()}`,
-        username: 'demo_account',
-        access_token: 'mock_access_token',
-        profile_picture_url: 'https://via.placeholder.com/150',
-        follower_count: 1250,
-        following_count: 450,
-        media_count: 89,
-        is_business_account: true,
-        account_type: 'business',
-        token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
-      };
+      console.log('Connecting to Instagram profile:', instagramUsername);
 
-      const { data, error } = await supabase
-        .from('instagram_connections')
-        .insert([mockInstagramData])
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('instagram-starapi', {
+        body: { 
+          action: 'connect_profile', 
+          username: instagramUsername.trim().replace('@', '') 
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to connect profile');
+
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['instagram-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['content-list'] });
+      toast({
+        title: "Profile Connected!",
+        description: `Successfully connected @${data.connection.username}`,
+      });
+      setUsername('');
     },
+    onError: (error: any) => {
+      console.error('Connection failed:', error);
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect Instagram profile. Please check the username and try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Sync content for a connected profile
+  const syncContent = useMutation({
+    mutationFn: async (profileUsername: string) => {
+      const { data, error } = await supabase.functions.invoke('instagram-starapi', {
+        body: { 
+          action: 'sync_content', 
+          username: profileUsername 
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to sync content');
+
+      return data;
+    },
+    onSuccess: (data, profileUsername) => {
+      queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['content-list'] });
+      queryClient.invalidateQueries({ queryKey: ['performance-by-type'] });
+      toast({
+        title: "Content Synced!",
+        description: `Synced ${data.synced_posts} posts from @${profileUsername}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync content. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleConnect = async () => {
+    if (!username.trim()) {
+      toast({
+        title: "Username Required",
+        description: "Please enter an Instagram username",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsConnecting(true);
     try {
-      await connectInstagram.mutateAsync();
-    } catch (error) {
-      console.error('Connection failed:', error);
+      await connectInstagram.mutateAsync(username);
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const handleSync = async (profileUsername: string) => {
+    await syncContent.mutateAsync(profileUsername);
   };
 
   if (isLoading) {
@@ -114,30 +167,48 @@ export const InstagramConnect = () => {
               Connect your Instagram accounts to start tracking analytics
             </p>
           </div>
-          <Button 
-            onClick={handleConnect}
-            disabled={isConnecting}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-          >
-            {isConnecting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Connecting...
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Connect Account
-              </>
-            )}
-          </Button>
+        </div>
+
+        {/* Connection Form */}
+        <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="username">Instagram Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Enter username (e.g., naukridotcom)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleConnect()}
+                disabled={isConnecting}
+              />
+            </div>
+            <Button 
+              onClick={handleConnect}
+              disabled={isConnecting || !username.trim()}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Connect Profile
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {connectInstagram.error && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to connect Instagram account. Please try again.
+              {connectInstagram.error.message}
             </AlertDescription>
           </Alert>
         )}
@@ -164,9 +235,24 @@ export const InstagramConnect = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center text-green-600">
-                  <CheckCircle className="w-5 h-5 mr-1" />
-                  <span className="text-sm font-medium">Connected</span>
+                <div className="flex items-center space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSync(connection.username)}
+                    disabled={syncContent.isPending}
+                  >
+                    {syncContent.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    <span className="ml-1">Sync</span>
+                  </Button>
+                  <div className="flex items-center text-green-600">
+                    <CheckCircle className="w-5 h-5 mr-1" />
+                    <span className="text-sm font-medium">Connected</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -176,7 +262,7 @@ export const InstagramConnect = () => {
             <Instagram className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h4 className="text-lg font-medium text-gray-900 mb-2">No accounts connected</h4>
             <p className="text-gray-600 mb-6">
-              Connect your Instagram account to start analyzing your content performance
+              Enter an Instagram username above to start analyzing content performance
             </p>
           </div>
         )}
@@ -187,6 +273,7 @@ export const InstagramConnect = () => {
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
             🎉 Great! Your Instagram account is connected. You can now view your analytics dashboard with real data.
+            Use the "Sync" button to update your content data.
           </AlertDescription>
         </Alert>
       )}
