@@ -82,35 +82,75 @@ serve(async (req) => {
 
     if (action === 'connect_profile') {
       try {
-        // Fetch user data from StarAPI
-        console.log('Fetching user data from StarAPI...')
-        const userResponse = await fetch(`https://instagram-scraper-api2.p.rapidapi.com/v1/info?username_or_id_or_url=${username}`, {
+        // First, get user info by username to get the user ID
+        console.log('Fetching user ID from StarAPI...')
+        const userIdResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_username`, {
+          method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
-            'X-RapidAPI-Host': 'instagram-scraper-api2.p.rapidapi.com'
-          }
+            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: username })
+        })
+
+        console.log('StarAPI user ID response status:', userIdResponse.status)
+        
+        if (!userIdResponse.ok) {
+          const errorText = await userIdResponse.text()
+          console.error('StarAPI user ID fetch failed:', userIdResponse.status, errorText)
+          return new Response(JSON.stringify({ 
+            error: `Failed to fetch user ID. Status: ${userIdResponse.status}`,
+            details: errorText,
+            suggestion: 'Please verify the Instagram username is correct.'
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const userIdData = await userIdResponse.json()
+        console.log('User ID data received:', JSON.stringify(userIdData, null, 2))
+
+        if (!userIdData || !userIdData.id) {
+          console.error('Invalid user ID data received:', userIdData)
+          return new Response(JSON.stringify({ 
+            error: 'Could not retrieve user ID for the username.',
+            received_data: userIdData,
+            suggestion: 'Please verify the Instagram username is correct and the profile is public.'
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Now get detailed user info using the ID
+        console.log('Fetching detailed user data from StarAPI...')
+        const userResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_id`, {
+          method: 'POST',
+          headers: {
+            'X-RapidAPI-Key': starApiKey,
+            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: userIdData.id })
         })
 
         console.log('StarAPI user response status:', userResponse.status)
-        console.log('StarAPI user response headers:', JSON.stringify(Object.fromEntries(userResponse.headers.entries())))
         
         if (!userResponse.ok) {
           const errorText = await userResponse.text()
           console.error('StarAPI user fetch failed:', userResponse.status, errorText)
           
-          // Check for specific API subscription errors
           if (userResponse.status === 403) {
-            const errorData = JSON.parse(errorText)
-            if (errorData.message?.includes('not subscribed')) {
-              return new Response(JSON.stringify({ 
-                error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint. Please check your RapidAPI dashboard.',
-                details: errorText,
-                suggestion: 'Verify your StarAPI subscription status at https://rapidapi.com/hub'
-              }), {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              })
-            }
+            return new Response(JSON.stringify({ 
+              error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint.',
+              details: errorText,
+              suggestion: 'Verify your StarAPI subscription status at https://rapidapi.com/hub'
+            }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
           }
           
           if (userResponse.status === 429) {
@@ -126,7 +166,7 @@ serve(async (req) => {
           return new Response(JSON.stringify({ 
             error: `Failed to fetch Instagram profile data. Status: ${userResponse.status}`,
             details: errorText,
-            suggestion: userResponse.status === 404 ? 'Profile not found. Please check the username.' : 'Please try again later.'
+            suggestion: 'Please try again later.'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -155,7 +195,7 @@ serve(async (req) => {
           .from('instagram_connections')
           .insert({
             user_id: user.id,
-            instagram_user_id: userData.username,
+            instagram_user_id: userData.id || userData.username,
             username: userData.username,
             access_token: 'starapi_token',
             profile_picture_url: userData.profile_picture_url || null,
@@ -199,13 +239,51 @@ serve(async (req) => {
 
     if (action === 'sync_content') {
       try {
-        // Fetch media from StarAPI
-        console.log('Fetching media data from StarAPI...')
-        const mediaResponse = await fetch(`https://instagram-scraper-api2.p.rapidapi.com/v1/posts?username_or_id_or_url=${username}`, {
+        // First get user ID from username
+        const userIdResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_username`, {
+          method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
-            'X-RapidAPI-Host': 'instagram-scraper-api2.p.rapidapi.com'
-          }
+            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: username })
+        })
+
+        if (!userIdResponse.ok) {
+          const errorText = await userIdResponse.text()
+          console.error('StarAPI user ID fetch failed:', userIdResponse.status, errorText)
+          return new Response(JSON.stringify({ 
+            error: `Failed to fetch user ID for content sync. Status: ${userIdResponse.status}`,
+            details: errorText
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const userIdData = await userIdResponse.json()
+        
+        if (!userIdData || !userIdData.id) {
+          return new Response(JSON.stringify({ 
+            error: 'Could not retrieve user ID for content sync.',
+            received_data: userIdData
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Fetch media using user ID
+        console.log('Fetching media data from StarAPI...')
+        const mediaResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_posts`, {
+          method: 'POST',
+          headers: {
+            'X-RapidAPI-Key': starApiKey,
+            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: userIdData.id, limit: 50 })
         })
 
         console.log('StarAPI media response status:', mediaResponse.status)
@@ -215,17 +293,14 @@ serve(async (req) => {
           console.error('StarAPI media fetch failed:', mediaResponse.status, errorText)
           
           if (mediaResponse.status === 403) {
-            const errorData = JSON.parse(errorText)
-            if (errorData.message?.includes('not subscribed')) {
-              return new Response(JSON.stringify({ 
-                error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint.',
-                details: errorText,
-                suggestion: 'Please check your RapidAPI dashboard and subscription status.'
-              }), {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              })
-            }
+            return new Response(JSON.stringify({ 
+              error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint.',
+              details: errorText,
+              suggestion: 'Please check your RapidAPI dashboard and subscription status.'
+            }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
           }
 
           return new Response(JSON.stringify({ 
@@ -253,20 +328,20 @@ serve(async (req) => {
 
         const contentItems = []
         
-        for (const media of (mediaData.data || []).slice(0, 50)) { // Limit to 50 recent posts
+        for (const media of (mediaData.data || []).slice(0, 50)) {
           const contentItem = {
             tracked_profile_id: username,
             instagram_media_id: media.id,
-            content_link: media.permalink,
+            content_link: media.permalink || `https://instagram.com/p/${media.shortcode}`,
             content_type: media.media_type?.toLowerCase() === 'video' ? 'reel' : 
                          media.media_type?.toLowerCase() === 'carousel_album' ? 'carousel' : 'post',
-            caption: media.caption?.substring(0, 2000) || null, // Limit caption length
-            thumbnail_url: media.thumbnail_url || media.media_url,
-            post_date: new Date(media.timestamp).toISOString(),
+            caption: media.caption?.substring(0, 2000) || null,
+            thumbnail_url: media.thumbnail_url || media.display_url || media.media_url,
+            post_date: new Date(media.taken_at_timestamp * 1000).toISOString(),
             total_likes: media.like_count || 0,
-            total_comments: media.comments_count || 0,
-            total_views: media.play_count || media.impressions_count || 0,
-            total_shares: media.shares_count || 0,
+            total_comments: media.comment_count || 0,
+            total_views: media.video_view_count || media.play_count || 0,
+            total_shares: 0, // StarAPI doesn't provide share count
             last_refreshed_at: new Date().toISOString()
           }
           contentItems.push(contentItem)
