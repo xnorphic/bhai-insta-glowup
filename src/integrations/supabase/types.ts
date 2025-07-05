@@ -168,6 +168,74 @@ export type Database = {
           },
         ]
       }
+      instagram_connections: {
+        Row: {
+          access_token: string
+          account_type: string | null
+          connected_at: string
+          created_at: string
+          follower_count: number | null
+          following_count: number | null
+          id: string
+          instagram_user_id: string
+          is_active: boolean | null
+          is_business_account: boolean | null
+          last_sync_at: string | null
+          media_count: number | null
+          profile_picture_url: string | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          access_token: string
+          account_type?: string | null
+          connected_at?: string
+          created_at?: string
+          follower_count?: number | null
+          following_count?: number | null
+          id?: string
+          instagram_user_id: string
+          is_active?: boolean | null
+          is_business_account?: boolean | null
+          last_sync_at?: string | null
+          media_count?: number | null
+          profile_picture_url?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          access_token?: string
+          account_type?: string | null
+          connected_at?: string
+          created_at?: string
+          follower_count?: number | null
+          following_count?: number | null
+          id?: string
+          instagram_user_id?: string
+          is_active?: boolean | null
+          is_business_account?: boolean | null
+          last_sync_at?: string | null
+          media_count?: number | null
+          profile_picture_url?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_content: {
         Row: {
           ai_performance_summary: string | null
@@ -248,6 +316,38 @@ export type Database = {
           tracked_profile_id?: string
         }
         Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          session_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          session_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {

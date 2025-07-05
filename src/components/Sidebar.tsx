@@ -1,53 +1,63 @@
 
+import React from "react";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart3, 
-  TrendingUp, 
-  Users, 
-  BookOpen, 
   Calendar, 
-  Settings as SettingsIcon 
+  Target, 
+  BookOpen, 
+  Settings as SettingsIcon, 
+  Instagram,
+  Link
 } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  onTabChange: (tab: string) => void;
 }
 
-export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "analytics", label: "Analytics", icon: TrendingUp },
-    { id: "competition", label: "Competition", icon: Users },
-    { id: "brandbook", label: "Brand Book", icon: BookOpen },
-    { id: "calendar", label: "Calendar", icon: Calendar },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "connect", label: "Connect Instagram", icon: Link },
+    { id: "calendar", label: "Content Calendar", icon: Calendar },
+    { id: "competition", label: "Competition Analysis", icon: Target },
+    { id: "brandbook", label: "Brandbook Builder", icon: BookOpen },
     { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
   return (
-    <div className="w-64 bg-[hsl(240,50%,40%)] min-h-screen p-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">bhAI</h1>
-        <p className="text-white/70 text-sm">Social Media Bro Tool</p>
+    <div className="w-64 bg-white shadow-lg flex flex-col">
+      <div className="p-6 border-b">
+        <div className="flex items-center space-x-3">
+          <Instagram className="w-8 h-8 text-purple-600" />
+          <h2 className="text-xl font-bold text-gray-900">bhAI</h2>
+        </div>
+        <p className="text-sm text-gray-600 mt-1">Social Media Analytics</p>
       </div>
       
-      <nav className="space-y-2">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                activeTab === item.id
-                  ? "bg-[hsl(240,70%,70%)] text-white font-medium"
-                  : "text-white/80 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Icon size={20} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <li key={item.id}>
+                <Button
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  className={`w-full justify-start ${
+                    activeTab === item.id 
+                      ? "bg-purple-600 hover:bg-purple-700 text-white" 
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                  onClick={() => onTabChange(item.id)}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
     </div>
   );
