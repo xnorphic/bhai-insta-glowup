@@ -7,12 +7,13 @@ import { instagramService, type AnalyticsFilters } from "@/services/instagramSer
 import { PerformanceChart } from "@/components/analytics/PerformanceChart";
 import { ContentTable } from "@/components/analytics/ContentTable";
 import { AnalyticsFilters as FiltersComponent } from "@/components/analytics/AnalyticsFilters";
+import { DataLoader } from "@/components/instagram/DataLoader";
 
 export const InstagramAnalytics = () => {
   const [filters, setFilters] = useState<AnalyticsFilters>({});
 
-  // Mock available profiles for now - in real app, you'd fetch this from user's connected profiles
-  const availableProfiles = ["naukridotcom", "example_profile"];
+  // Available profiles now include both owned and competitor profiles
+  const availableProfiles = ["naukridotcom", "swiggyindia"];
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['analytics-summary', filters],
@@ -33,7 +34,7 @@ export const InstagramAnalytics = () => {
     {
       title: "Total Posts",
       value: summary?.totalPosts?.toString() || "0",
-      change: "+12%", // This would be calculated from previous period
+      change: "+12%",
       trend: "up" as const,
       icon: <Eye className="w-5 h-5" />
     },
@@ -65,6 +66,9 @@ export const InstagramAnalytics = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#333333]">Instagram Analytics</h1>
       </div>
+
+      {/* Data Loader */}
+      <DataLoader />
 
       {/* Filters */}
       <FiltersComponent 
@@ -122,10 +126,13 @@ export const InstagramAnalytics = () => {
               <p className="text-[#333333] font-medium mb-2">
                 {summary.topPerformingPost.caption || 'No caption available'}
               </p>
-              <div className="flex space-x-4 text-sm text-[#666666]">
+              <div className="flex space-x-4 text-sm text-[#666666] mb-2">
                 <span>❤️ {summary.topPerformingPost.total_likes.toLocaleString()}</span>
                 <span>💬 {summary.topPerformingPost.total_comments.toLocaleString()}</span>
                 <span>👁️ {summary.topPerformingPost.total_views.toLocaleString()}</span>
+              </div>
+              <div className="text-xs text-[#666666]">
+                Profile: @{summary.topPerformingPost.tracked_profile_id}
               </div>
               {summary.topPerformingPost.ai_performance_summary && (
                 <p className="text-sm text-[#666666] mt-2 italic">
@@ -152,8 +159,8 @@ export const InstagramAnalytics = () => {
             </div>
             <h3 className="text-xl font-semibold text-[#333333]">No Instagram Data Found</h3>
             <p className="text-[#666666] max-w-md mx-auto">
-              Connect your Instagram profiles and start tracking your content performance. 
-              Your analytics dashboard will appear here once data is available.
+              Use the Data Loader above to fetch Instagram data for analysis. 
+              Your analytics dashboard will populate once data is loaded.
             </p>
           </div>
         </Card>
