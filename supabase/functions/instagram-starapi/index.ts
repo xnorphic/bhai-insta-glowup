@@ -82,9 +82,9 @@ serve(async (req) => {
 
     if (action === 'connect_profile') {
       try {
-        // First, get user info by username to get the user ID
-        console.log('Fetching user ID from StarAPI...')
-        const userIdResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_username`, {
+        // Use the working user info endpoint with username parameter
+        console.log('Fetching user info from StarAPI...')
+        const userResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/info`, {
           method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
@@ -92,48 +92,6 @@ serve(async (req) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ username: username })
-        })
-
-        console.log('StarAPI user ID response status:', userIdResponse.status)
-        
-        if (!userIdResponse.ok) {
-          const errorText = await userIdResponse.text()
-          console.error('StarAPI user ID fetch failed:', userIdResponse.status, errorText)
-          return new Response(JSON.stringify({ 
-            error: `Failed to fetch user ID. Status: ${userIdResponse.status}`,
-            details: errorText,
-            suggestion: 'Please verify the Instagram username is correct.'
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        const userIdData = await userIdResponse.json()
-        console.log('User ID data received:', JSON.stringify(userIdData, null, 2))
-
-        if (!userIdData || !userIdData.id) {
-          console.error('Invalid user ID data received:', userIdData)
-          return new Response(JSON.stringify({ 
-            error: 'Could not retrieve user ID for the username.',
-            received_data: userIdData,
-            suggestion: 'Please verify the Instagram username is correct and the profile is public.'
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Now get detailed user info using the ID
-        console.log('Fetching detailed user data from StarAPI...')
-        const userResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_id`, {
-          method: 'POST',
-          headers: {
-            'X-RapidAPI-Key': starApiKey,
-            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ id: userIdData.id })
         })
 
         console.log('StarAPI user response status:', userResponse.status)
@@ -166,7 +124,7 @@ serve(async (req) => {
           return new Response(JSON.stringify({ 
             error: `Failed to fetch Instagram profile data. Status: ${userResponse.status}`,
             details: errorText,
-            suggestion: 'Please try again later.'
+            suggestion: 'Please verify the Instagram username is correct and try again.'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -239,51 +197,16 @@ serve(async (req) => {
 
     if (action === 'sync_content') {
       try {
-        // First get user ID from username
-        const userIdResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_info_by_username`, {
-          method: 'POST',
-          headers: {
-            'X-RapidAPI-Key': starApiKey,
-            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ username: username })
-        })
-
-        if (!userIdResponse.ok) {
-          const errorText = await userIdResponse.text()
-          console.error('StarAPI user ID fetch failed:', userIdResponse.status, errorText)
-          return new Response(JSON.stringify({ 
-            error: `Failed to fetch user ID for content sync. Status: ${userIdResponse.status}`,
-            details: errorText
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        const userIdData = await userIdResponse.json()
-        
-        if (!userIdData || !userIdData.id) {
-          return new Response(JSON.stringify({ 
-            error: 'Could not retrieve user ID for content sync.',
-            received_data: userIdData
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Fetch media using user ID
+        // Use the working posts endpoint with username parameter
         console.log('Fetching media data from StarAPI...')
-        const mediaResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_posts`, {
+        const mediaResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/posts`, {
           method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
             'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id: userIdData.id, limit: 50 })
+          body: JSON.stringify({ username: username, limit: 50 })
         })
 
         console.log('StarAPI media response status:', mediaResponse.status)
@@ -303,9 +226,20 @@ serve(async (req) => {
             })
           }
 
+          if (mediaResponse.status === 429) {
+            return new Response(JSON.stringify({ 
+              error: 'Rate limit exceeded. Please wait a moment before trying again.',
+              details: errorText
+            }), {
+              status: 429,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+          }
+
           return new Response(JSON.stringify({ 
             error: `Failed to fetch Instagram media data. Status: ${mediaResponse.status}`,
-            details: errorText
+            details: errorText,
+            suggestion: `Username "${username}" may not exist or be private. Please verify the username.`
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -319,7 +253,8 @@ serve(async (req) => {
           console.error('Invalid media data structure:', mediaData)
           return new Response(JSON.stringify({ 
             error: 'Invalid media data structure received',
-            received_data: mediaData
+            received_data: mediaData,
+            suggestion: `No posts found for username "${username}". The profile may be private or have no posts.`
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -371,7 +306,8 @@ serve(async (req) => {
         console.log('Content inserted/updated successfully:', insertedContent?.length || 0)
         return new Response(JSON.stringify({ 
           success: true, 
-          synced_posts: insertedContent?.length || 0 
+          synced_posts: insertedContent?.length || 0,
+          message: `Successfully synced ${insertedContent?.length || 0} posts for ${username}`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
@@ -380,7 +316,8 @@ serve(async (req) => {
         console.error('Content sync error:', apiError)
         return new Response(JSON.stringify({ 
           error: 'Failed to sync content from Instagram API',
-          details: apiError.message
+          details: apiError.message,
+          suggestion: 'Please check your internet connection and try again.'
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -397,7 +334,8 @@ serve(async (req) => {
     console.error('Edge function error:', error)
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message
+      details: error.message,
+      suggestion: 'Please try again. If the problem persists, contact support.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
