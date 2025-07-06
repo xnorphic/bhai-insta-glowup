@@ -64,43 +64,85 @@ export type Database = {
       }
       brand_books: {
         Row: {
+          addressed_market: string | null
           ai_generated_playbook: string | null
           ai_summary_json: Json | null
+          aspiration_market: string | null
+          brand_colors_fonts: string | null
+          content_ips: string | null
+          customer_personas: string | null
+          customer_strengths: string | null
+          customer_weaknesses: string | null
+          extracted_text: string | null
           file_url: string
           id: string
+          is_analysis_complete: boolean | null
+          missing_information: Json | null
           original_filename: string
           playbook_start_year: number | null
           posts_scanned_for_playbook: number
+          strategy_pillars: string | null
+          tonality: string | null
           upload_timestamp: string
           uploaded_by_username: string
           user_id: string
           version: number
+          what_not_to_do: string | null
+          what_we_do: string | null
         }
         Insert: {
+          addressed_market?: string | null
           ai_generated_playbook?: string | null
           ai_summary_json?: Json | null
+          aspiration_market?: string | null
+          brand_colors_fonts?: string | null
+          content_ips?: string | null
+          customer_personas?: string | null
+          customer_strengths?: string | null
+          customer_weaknesses?: string | null
+          extracted_text?: string | null
           file_url: string
           id?: string
+          is_analysis_complete?: boolean | null
+          missing_information?: Json | null
           original_filename: string
           playbook_start_year?: number | null
           posts_scanned_for_playbook?: number
+          strategy_pillars?: string | null
+          tonality?: string | null
           upload_timestamp?: string
           uploaded_by_username: string
           user_id: string
           version: number
+          what_not_to_do?: string | null
+          what_we_do?: string | null
         }
         Update: {
+          addressed_market?: string | null
           ai_generated_playbook?: string | null
           ai_summary_json?: Json | null
+          aspiration_market?: string | null
+          brand_colors_fonts?: string | null
+          content_ips?: string | null
+          customer_personas?: string | null
+          customer_strengths?: string | null
+          customer_weaknesses?: string | null
+          extracted_text?: string | null
           file_url?: string
           id?: string
+          is_analysis_complete?: boolean | null
+          missing_information?: Json | null
           original_filename?: string
           playbook_start_year?: number | null
           posts_scanned_for_playbook?: number
+          strategy_pillars?: string | null
+          tonality?: string | null
           upload_timestamp?: string
           uploaded_by_username?: string
           user_id?: string
           version?: number
+          what_not_to_do?: string | null
+          what_we_do?: string | null
         }
         Relationships: [
           {
