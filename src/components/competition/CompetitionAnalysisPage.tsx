@@ -9,7 +9,6 @@ import { Heart, MessageCircle, Share2, Eye, TrendingUp, Users, Calendar, Target,
 import { CompetitionMetrics } from "./CompetitionMetrics";
 import { TopPerformingPosts } from "./TopPerformingPosts";
 import { AIInsights } from "./AIInsights";
-import { CompetitionInstagramConnect } from "./CompetitionInstagramConnect";
 
 // Dummy data for demonstration
 const mockData = {
@@ -132,10 +131,9 @@ export const CompetitionAnalysisPage = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="content">Content Analysis</TabsTrigger>
-            <TabsTrigger value="connect">Connect Accounts</TabsTrigger>
             <TabsTrigger value="insights">AI Insights</TabsTrigger>
           </TabsList>
 
@@ -199,11 +197,6 @@ export const CompetitionAnalysisPage = () => {
                 }))}
               />
             </div>
-          </TabsContent>
-
-          {/* Connect Accounts Tab */}
-          <TabsContent value="connect">
-            <CompetitionInstagramConnect />
           </TabsContent>
 
           {/* AI Insights Tab */}
