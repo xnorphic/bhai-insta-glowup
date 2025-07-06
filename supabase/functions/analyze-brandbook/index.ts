@@ -16,14 +16,22 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Analyze brandbook function started');
+    
     const { brandBookId, extractedText } = await req.json();
+    console.log('Request data:', { brandBookId, extractedTextPreview: extractedText?.substring(0, 100) });
 
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
     const prompt = `
-    Analyze the following brand book content and extract key information. Please provide a JSON response with the following structure:
+    You are a brand strategy expert. Analyze the following brand book content and extract key information. 
+    
+    IMPORTANT: You MUST respond with valid JSON only. Do not include any explanations, markdown, or other text outside the JSON structure.
+    
+    Required JSON structure:
     {
       "what_we_do": "Brief description of what the company does",
       "strategy_pillars": "Main strategic pillars or values",
@@ -44,6 +52,7 @@ serve(async (req) => {
     ${extractedText}
     `;
 
+    console.log('Making OpenAI API request');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -55,28 +64,59 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a brand strategy expert. Analyze brand books and extract structured information. Always respond with valid JSON only.' 
+            content: 'You are a brand strategy expert. Always respond with valid JSON only, no explanations or markdown.' 
           },
           { role: 'user', content: prompt }
         ],
         temperature: 0.3,
+        max_tokens: 2000,
       }),
     });
 
+    console.log('OpenAI response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received');
+    
     const analysisResult = data.choices[0].message.content;
+    console.log('AI response preview:', analysisResult?.substring(0, 200));
 
-    // Parse the JSON response
+    // Parse the JSON response with better error handling
     let parsedAnalysis;
     try {
-      parsedAnalysis = JSON.parse(analysisResult);
-    } catch (error) {
+      // Clean the response to ensure it's valid JSON
+      const cleanedResponse = analysisResult.trim();
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
+      
+      parsedAnalysis = JSON.parse(jsonString);
+      console.log('Successfully parsed AI response');
+    } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', analysisResult);
-      throw new Error('Invalid AI response format');
+      console.error('Parse error:', parseError);
+      
+      // Fallback: create a basic analysis structure
+      parsedAnalysis = {
+        what_we_do: "Analysis could not be completed due to parsing error",
+        strategy_pillars: "Please re-upload the brand book for analysis",
+        brand_colors_fonts: "Not available",
+        addressed_market: "Not available",
+        aspiration_market: "Not available",
+        content_ips: "Not available",
+        tonality: "Not available",
+        what_not_to_do: "Not available",
+        customer_personas: "Not available",
+        customer_strengths: "Not available",
+        customer_weaknesses: "Not available",
+        missing_information: ["Complete brand book analysis due to parsing error"],
+        ai_generated_playbook: "Analysis incomplete. Please try re-uploading your brand book."
+      };
     }
 
     // Update the brand book in the database
@@ -85,6 +125,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    console.log('Updating database with analysis results');
     const { error: updateError } = await supabase
       .from('brand_books')
       .update({
@@ -106,9 +147,11 @@ serve(async (req) => {
       .eq('id', brandBookId);
 
     if (updateError) {
+      console.error('Database update error:', updateError);
       throw updateError;
     }
 
+    console.log('Analysis completed successfully');
     return new Response(
       JSON.stringify({ success: true, analysis: parsedAnalysis }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -117,7 +160,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in analyze-brandbook function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Check function logs for more information'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
