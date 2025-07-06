@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Upload, FileText, Download, Eye, Trash2, RefreshCw, AlertCircle } from 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 interface BrandBook {
   id: string;
@@ -31,7 +31,7 @@ interface BrandBook {
   customer_personas?: string;
   customer_strengths?: string;
   customer_weaknesses?: string;
-  missing_information?: string[];
+  missing_information?: Json;
   is_analysis_complete?: boolean;
   ai_generated_playbook?: string;
 }
@@ -63,6 +63,15 @@ export const BrandbookBuilder = () => {
       console.error('Error fetching brand books:', error);
       toast.error('Failed to load brand books');
     }
+  };
+
+  // Helper function to safely convert Json to string array
+  const getMissingInformationArray = (missingInfo: Json | undefined): string[] => {
+    if (!missingInfo) return [];
+    if (Array.isArray(missingInfo)) {
+      return missingInfo.filter(item => typeof item === 'string') as string[];
+    }
+    return [];
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,160 +289,164 @@ export const BrandbookBuilder = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {brandBooks.map((brandBook) => (
-              <Card key={brandBook.id} className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <FileText className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <h3 className="font-semibold text-[#333333]">{brandBook.original_filename}</h3>
-                      <p className="text-sm text-[#666666]">
-                        Version {brandBook.version} • Uploaded {new Date(brandBook.upload_timestamp).toLocaleDateString()}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        {brandBook.is_analysis_complete ? (
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            Analysis Complete
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                            Processing
-                          </Badge>
-                        )}
-                        
-                        {brandBook.missing_information && brandBook.missing_information.length > 0 && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-600">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Missing Info
-                          </Badge>
-                        )}
+            {brandBooks.map((brandBook) => {
+              const missingInfoArray = getMissingInformationArray(brandBook.missing_information);
+              
+              return (
+                <Card key={brandBook.id} className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <FileText className="w-8 h-8 text-purple-600" />
+                      <div>
+                        <h3 className="font-semibold text-[#333333]">{brandBook.original_filename}</h3>
+                        <p className="text-sm text-[#666666]">
+                          Version {brandBook.version} • Uploaded {new Date(brandBook.upload_timestamp).toLocaleDateString()}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          {brandBook.is_analysis_complete ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              Analysis Complete
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              Processing
+                            </Badge>
+                          )}
+                          
+                          {missingInfoArray.length > 0 && (
+                            <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Missing Info
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedBrandBook(brandBook)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Analysis
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Brand Book Analysis - {brandBook.original_filename}</DialogTitle>
-                        </DialogHeader>
-                        
-                        {selectedBrandBook && (
-                          <Tabs defaultValue="overview" className="w-full">
-                            <TabsList className="grid w-full grid-cols-4">
-                              <TabsTrigger value="overview">Overview</TabsTrigger>
-                              <TabsTrigger value="strategy">Strategy</TabsTrigger>
-                              <TabsTrigger value="audience">Audience</TabsTrigger>
-                              <TabsTrigger value="playbook">Playbook</TabsTrigger>
-                            </TabsList>
-                            
-                            <TabsContent value="overview" className="space-y-4">
-                              <div className="grid gap-4">
-                                <div>
-                                  <h3 className="font-semibold mb-2">What We Do</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.what_we_do || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">Brand Colors & Fonts</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.brand_colors_fonts || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">Tonality</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.tonality || 'Not analyzed yet'}</p>
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="strategy" className="space-y-4">
-                              <div className="grid gap-4">
-                                <div>
-                                  <h3 className="font-semibold mb-2">Strategy Pillars</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.strategy_pillars || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">Content IPs</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.content_ips || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">What Not To Do</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.what_not_to_do || 'Not analyzed yet'}</p>
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="audience" className="space-y-4">
-                              <div className="grid gap-4">
-                                <div>
-                                  <h3 className="font-semibold mb-2">Customer Personas</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.customer_personas || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">Addressed Market</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.addressed_market || 'Not analyzed yet'}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold mb-2">Aspiration Market</h3>
-                                  <p className="text-sm text-gray-600">{selectedBrandBook.aspiration_market || 'Not analyzed yet'}</p>
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="playbook" className="space-y-4">
-                              <div>
-                                <h3 className="font-semibold mb-2">AI Generated Playbook</h3>
-                                <Textarea 
-                                  value={selectedBrandBook.ai_generated_playbook || 'Playbook not generated yet'} 
-                                  readOnly 
-                                  className="min-h-[200px]"
-                                />
-                              </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedBrandBook(brandBook)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Analysis
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Brand Book Analysis - {brandBook.original_filename}</DialogTitle>
+                          </DialogHeader>
+                          
+                          {selectedBrandBook && (
+                            <Tabs defaultValue="overview" className="w-full">
+                              <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="overview">Overview</TabsTrigger>
+                                <TabsTrigger value="strategy">Strategy</TabsTrigger>
+                                <TabsTrigger value="audience">Audience</TabsTrigger>
+                                <TabsTrigger value="playbook">Playbook</TabsTrigger>
+                              </TabsList>
                               
-                              {selectedBrandBook.missing_information && selectedBrandBook.missing_information.length > 0 && (
-                                <div>
-                                  <h3 className="font-semibold mb-2 text-orange-600">Missing Information</h3>
-                                  <ul className="list-disc list-inside space-y-1">
-                                    {selectedBrandBook.missing_information.map((item, index) => (
-                                      <li key={index} className="text-sm text-gray-600">{item}</li>
-                                    ))}
-                                  </ul>
+                              <TabsContent value="overview" className="space-y-4">
+                                <div className="grid gap-4">
+                                  <div>
+                                    <h3 className="font-semibold mb-2">What We Do</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.what_we_do || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Brand Colors & Fonts</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.brand_colors_fonts || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Tonality</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.tonality || 'Not analyzed yet'}</p>
+                                  </div>
                                 </div>
-                              )}
-                            </TabsContent>
-                          </Tabs>
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => downloadBrandBook(brandBook)}
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => deleteBrandBook(brandBook)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                              </TabsContent>
+                              
+                              <TabsContent value="strategy" className="space-y-4">
+                                <div className="grid gap-4">
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Strategy Pillars</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.strategy_pillars || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Content IPs</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.content_ips || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">What Not To Do</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.what_not_to_do || 'Not analyzed yet'}</p>
+                                  </div>
+                                </div>
+                              </TabsContent>
+                              
+                              <TabsContent value="audience" className="space-y-4">
+                                <div className="grid gap-4">
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Customer Personas</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.customer_personas || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Addressed Market</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.addressed_market || 'Not analyzed yet'}</p>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Aspiration Market</h3>
+                                    <p className="text-sm text-gray-600">{selectedBrandBook.aspiration_market || 'Not analyzed yet'}</p>
+                                  </div>
+                                </div>
+                              </TabsContent>
+                              
+                              <TabsContent value="playbook" className="space-y-4">
+                                <div>
+                                  <h3 className="font-semibold mb-2">AI Generated Playbook</h3>
+                                  <Textarea 
+                                    value={selectedBrandBook.ai_generated_playbook || 'Playbook not generated yet'} 
+                                    readOnly 
+                                    className="min-h-[200px]"
+                                  />
+                                </div>
+                                
+                                {getMissingInformationArray(selectedBrandBook.missing_information).length > 0 && (
+                                  <div>
+                                    <h3 className="font-semibold mb-2 text-orange-600">Missing Information</h3>
+                                    <ul className="list-disc list-inside space-y-1">
+                                      {getMissingInformationArray(selectedBrandBook.missing_information).map((item, index) => (
+                                        <li key={index} className="text-sm text-gray-600">{item}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </TabsContent>
+                            </Tabs>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => downloadBrandBook(brandBook)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => deleteBrandBook(brandBook)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
