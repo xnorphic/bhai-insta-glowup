@@ -215,6 +215,42 @@ export type Database = {
           },
         ]
       }
+      drafts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          content_data: Json
+          created_at: string
+          created_by_username: string
+          form_data: Json
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content_data: Json
+          created_at?: string
+          created_by_username: string
+          form_data: Json
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content_data?: Json
+          created_at?: string
+          created_by_username?: string
+          form_data?: Json
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       important_dates: {
         Row: {
           created_at: string

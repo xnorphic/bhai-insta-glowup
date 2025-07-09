@@ -1,421 +1,279 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Download, 
-  Edit3,
-  Eye
-} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Eye, Trash2, CheckCircle, XCircle, Calendar, User, Clock } from "lucide-react";
+import { useDrafts } from "@/hooks/useDrafts";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-
-interface Draft {
-  id: string;
-  content: any;
-  status: 'pending' | 'approved' | 'rejected' | 'revision_requested';
-  createdAt: string;
-  eventDate: string;
-  platform: string;
-  contentType: string;
-  managerFeedback?: string;
-}
+import { format } from "date-fns";
 
 export const DraftManagement = () => {
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
-  const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [loading, setLoading] = useState(true);
-  
-  const { user } = useAuth();
+  const { drafts, loading, deleteDraft, updateDraftStatus } = useDrafts();
   const { toast } = useToast();
+  const [selectedDraft, setSelectedDraft] = useState<any>(null);
 
-  useEffect(() => {
-    fetchDrafts();
-  }, [user]);
-
-  const fetchDrafts = async () => {
-    if (!user) return;
-    
-    try {
-      // Mock data for now - replace with actual Supabase query
-      const mockDrafts: Draft[] = [
-        {
-          id: "1",
-          content: {
-            mainTheme: "Career Growth & Opportunities",
-            caption: "🚀 Ready to take your career to the next level? Discover thousands of opportunities waiting for you on Naukri.com. Your dream job is just a click away! #CareerGrowth #DreamJob #Naukri",
-            imagePrompt: "Professional office setting with diverse employees collaborating...",
-            platform: "instagram",
-            contentType: "post"
-          },
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-          eventDate: '2024-01-15',
-          platform: 'instagram',
-          contentType: 'post'
-        },
-        {
-          id: "2", 
-          content: {
-            mainTheme: "Skill Development & Learning",
-            caption: "💡 Invest in yourself! Upskill with Naukri.com's learning resources...",
-            imagePrompt: "Modern learning environment with books, digital devices...",
-            platform: "linkedin",
-            contentType: "carousel"
-          },
-          status: 'approved',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          eventDate: '2024-01-14',
-          platform: 'linkedin',
-          contentType: 'carousel'
-        }
-      ];
-      
-      setDrafts(mockDrafts);
-    } catch (error) {
-      console.error('Error fetching drafts:', error);
+  const handleDelete = async (draftId: string) => {
+    const success = await deleteDraft(draftId);
+    if (success) {
+      toast({
+        title: "Draft Deleted",
+        description: "The draft has been successfully deleted.",
+      });
+    } else {
       toast({
         title: "Error",
-        description: "Failed to fetch drafts",
-        variant: "destructive"
+        description: "Failed to delete draft. Please try again.",
+        variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const approveDraft = async (draftId: string) => {
-    try {
-      // Update draft status to approved
-      setDrafts(prev => prev.map(d => 
-        d.id === draftId ? { ...d, status: 'approved' as const } : d
-      ));
-      
+  const handleStatusUpdate = async (draftId: string, status: 'approved' | 'rejected') => {
+    const success = await updateDraftStatus(draftId, status);
+    if (success) {
       toast({
-        title: "Draft Approved",
-        description: "The content has been approved for publication",
+        title: `Draft ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+        description: `The draft has been ${status}.`,
       });
-    } catch (error) {
-      console.error('Error approving draft:', error);
+    } else {
       toast({
         title: "Error",
-        description: "Failed to approve draft",
-        variant: "destructive"
+        description: "Failed to update draft status. Please try again.",
+        variant: "destructive",
       });
-    }
-  };
-
-  const rejectDraft = async (draftId: string, feedback: string) => {
-    try {
-      // Update draft status to rejected with feedback
-      setDrafts(prev => prev.map(d => 
-        d.id === draftId ? { 
-          ...d, 
-          status: 'rejected' as const, 
-          managerFeedback: feedback 
-        } : d
-      ));
-      
-      toast({
-        title: "Draft Rejected",
-        description: "Feedback has been sent to the creator",
-      });
-      
-      setShowApprovalDialog(false);
-      setFeedback("");
-    } catch (error) {
-      console.error('Error rejecting draft:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reject draft",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const requestRevision = async (draftId: string, feedback: string) => {
-    try {
-      // Update draft status to revision requested with feedback
-      setDrafts(prev => prev.map(d => 
-        d.id === draftId ? { 
-          ...d, 
-          status: 'revision_requested' as const, 
-          managerFeedback: feedback 
-        } : d
-      ));
-      
-      toast({
-        title: "Revision Requested",
-        description: "Feedback has been sent for revisions",
-      });
-      
-      setShowApprovalDialog(false);
-      setFeedback("");
-    } catch (error) {
-      console.error('Error requesting revision:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to request revision",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const downloadContent = async (draft: Draft) => {
-    try {
-      // Create downloadable content
-      const content = {
-        platform: draft.platform,
-        contentType: draft.contentType,
-        caption: draft.content.caption,
-        imagePrompt: draft.content.imagePrompt,
-        mainTheme: draft.content.mainTheme,
-        eventDate: draft.eventDate,
-        carouselSlides: draft.content.carouselSlides
-      };
-
-      const blob = new Blob([JSON.stringify(content, null, 2)], {
-        type: 'application/json'
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `content-${draft.platform}-${draft.eventDate}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Content Downloaded",
-        description: "Content file has been downloaded successfully",
-      });
-    } catch (error) {
-      console.error('Error downloading content:', error);
-      toast({
-        title: "Error",
-        description: "Failed to download content",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getStatusBadge = (status: Draft['status']) => {
-    const statusConfig = {
-      pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-800" },
-      approved: { label: "Approved", color: "bg-green-100 text-green-800" },
-      rejected: { label: "Rejected", color: "bg-red-100 text-red-800" },
-      revision_requested: { label: "Needs Revision", color: "bg-blue-100 text-blue-800" }
-    };
-    
-    const config = statusConfig[status];
-    return (
-      <Badge className={config.color}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getStatusIcon = (status: Draft['status']) => {
-    switch (status) {
-      case 'pending': return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'approved': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'rejected': return <XCircle className="w-4 h-4 text-red-600" />;
-      case 'revision_requested': return <Edit3 className="w-4 h-4 text-blue-600" />;
     }
   };
 
   if (loading) {
-    return <div className="p-6">Loading drafts...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading drafts...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Draft Management</h2>
-        <Badge variant="outline">
-          {drafts.filter(d => d.status === 'pending').length} Pending Review
+        <h2 className="text-2xl font-semibold text-slate-800">Draft Management</h2>
+        <Badge variant="outline" className="text-slate-600">
+          {drafts.length} Draft{drafts.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {drafts.map((draft) => (
-          <Card key={draft.id} className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {getStatusIcon(draft.status)}
-                <span className="font-medium text-sm">
-                  {draft.platform} • {draft.contentType}
-                </span>
-              </div>
-              {getStatusBadge(draft.status)}
-            </div>
+      {drafts.length === 0 ? (
+        <Card className="p-8 text-center bg-white/80 backdrop-blur-sm rounded-2xl">
+          <div className="text-slate-500">
+            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-lg">No drafts yet</p>
+            <p className="text-sm">Generated content will appear here for review</p>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {drafts.map((draft) => (
+            <Card key={draft.id} className="p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Badge 
+                    variant={draft.status === 'approved' ? 'default' : draft.status === 'rejected' ? 'destructive' : 'secondary'}
+                  >
+                    {draft.status}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {draft.form_data?.platform} • {draft.form_data?.contentType}
+                  </Badge>
+                </div>
 
-            <div>
-              <h3 className="font-medium">{draft.content.mainTheme}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Event Date: {new Date(draft.eventDate).toLocaleDateString()}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Created: {new Date(draft.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-
-            <div className="text-sm">
-              <p className="line-clamp-2">{draft.content.caption}</p>
-            </div>
-
-            {draft.managerFeedback && (
-              <div className="bg-muted/50 p-2 rounded text-xs">
-                <strong>Feedback:</strong> {draft.managerFeedback}
-              </div>
-            )}
-
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSelectedDraft(draft);
-                  setShowDraftDialog(true);
-                }}
-              >
-                <Eye className="w-3 h-3 mr-1" />
-                View
-              </Button>
-
-              {draft.status === 'pending' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedDraft(draft);
-                    setShowApprovalDialog(true);
-                  }}
-                >
-                  Review
-                </Button>
-              )}
-
-              {draft.status === 'approved' && (
-                <Button
-                  size="sm"
-                  onClick={() => downloadContent(draft)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Download
-                </Button>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Draft Details Dialog */}
-      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Content Details</DialogTitle>
-          </DialogHeader>
-          {selectedDraft && (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Badge variant="outline">{selectedDraft.platform}</Badge>
-                <Badge variant="outline">{selectedDraft.contentType}</Badge>
-                {getStatusBadge(selectedDraft.status)}
-              </div>
-              
-              <div>
-                <h4 className="font-semibold">Main Theme</h4>
-                <p>{selectedDraft.content.mainTheme}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold">Caption</h4>
-                <p className="text-sm">{selectedDraft.content.caption}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold">Image Prompt</h4>
-                <p className="text-sm">{selectedDraft.content.imagePrompt}</p>
-              </div>
-
-              {selectedDraft.content.carouselSlides && (
                 <div>
-                  <h4 className="font-semibold">Carousel Slides</h4>
-                  <div className="space-y-2">
-                    {selectedDraft.content.carouselSlides.map((slide: any) => (
-                      <div key={slide.slideNumber} className="bg-muted/30 p-2 rounded">
-                        <p className="text-xs font-medium">Slide {slide.slideNumber}</p>
-                        <p className="text-xs">Image: {slide.imageGuideline}</p>
-                        <p className="text-xs">Text: {slide.textGuideline}</p>
-                      </div>
-                    ))}
+                  <h3 className="font-semibold text-slate-800 line-clamp-2">
+                    {draft.content_data?.mainTheme || 'Untitled Draft'}
+                  </h3>
+                  <p className="text-sm text-slate-600 line-clamp-2 mt-1">
+                    {draft.content_data?.caption || 'No caption available'}
+                  </p>
+                </div>
+
+                <div className="text-xs text-slate-500 space-y-1">
+                  <div className="flex items-center">
+                    <User className="w-3 h-3 mr-1" />
+                    {draft.created_by_username}
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {format(new Date(draft.created_at), 'MMM d, yyyy HH:mm')}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      {/* Approval Dialog */}
-      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Review Content</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>Review the content and provide feedback if needed.</p>
-            
-            <Textarea
-              placeholder="Optional feedback for rejection or revision..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-            />
-            
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => selectedDraft && approveDraft(selectedDraft.id)}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Approve
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => selectedDraft && requestRevision(selectedDraft.id, feedback)}
-                disabled={!feedback.trim()}
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                Request Revision
-              </Button>
-              
-              <Button
-                variant="destructive"
-                onClick={() => selectedDraft && rejectDraft(selectedDraft.id, feedback)}
-                disabled={!feedback.trim()}
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Reject
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setSelectedDraft(draft)}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl">
+                          {selectedDraft?.content_data?.mainTheme || 'Draft Content'}
+                        </DialogTitle>
+                      </DialogHeader>
+                      
+                      {selectedDraft && (
+                        <ScrollArea className="h-[70vh] pr-4">
+                          <div className="space-y-6">
+                            {/* Draft Metadata */}
+                            <Card className="p-4 bg-slate-50">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="font-medium">Created by:</span>
+                                  <p className="text-slate-600">{selectedDraft.created_by_username}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Created at:</span>
+                                  <p className="text-slate-600">
+                                    {format(new Date(selectedDraft.created_at), 'MMMM d, yyyy at HH:mm')}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Platform:</span>
+                                  <p className="text-slate-600 capitalize">{selectedDraft.form_data?.platform}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Content Type:</span>
+                                  <p className="text-slate-600 capitalize">{selectedDraft.form_data?.contentType}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Theme:</span>
+                                  <p className="text-slate-600">{selectedDraft.form_data?.theme}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Tone:</span>
+                                  <p className="text-slate-600 capitalize">{selectedDraft.form_data?.tone}</p>
+                                </div>
+                              </div>
+                            </Card>
+
+                            {/* Content Details */}
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold mb-2">Caption:</h4>
+                                <p className="text-slate-700 whitespace-pre-wrap">
+                                  {selectedDraft.content_data?.caption}
+                                </p>
+                              </div>
+
+                              <Separator />
+
+                              <div>
+                                <h4 className="font-semibold mb-2">Image Prompt:</h4>
+                                <p className="text-slate-700 whitespace-pre-wrap">
+                                  {selectedDraft.content_data?.imagePrompt}
+                                </p>
+                              </div>
+
+                              {selectedDraft.content_data?.reasoning && (
+                                <>
+                                  <Separator />
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Reasoning:</h4>
+                                    <p className="text-slate-700">{selectedDraft.content_data.reasoning}</p>
+                                  </div>
+                                </>
+                              )}
+
+                              {selectedDraft.content_data?.targetGroup && (
+                                <>
+                                  <Separator />
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Target Group:</h4>
+                                    <p className="text-slate-700">{selectedDraft.content_data.targetGroup}</p>
+                                  </div>
+                                </>
+                              )}
+
+                              {selectedDraft.content_data?.intendedFeeling && (
+                                <>
+                                  <Separator />
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Intended Feeling:</h4>
+                                    <p className="text-slate-700">{selectedDraft.content_data.intendedFeeling}</p>
+                                  </div>
+                                </>
+                              )}
+
+                              {selectedDraft.content_data?.carouselSlides && (
+                                <>
+                                  <Separator />
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Carousel Slides:</h4>
+                                    <div className="space-y-3">
+                                      {selectedDraft.content_data.carouselSlides.map((slide: any) => (
+                                        <Card key={slide.slideNumber} className="p-3 bg-slate-50">
+                                          <h5 className="font-medium">Slide {slide.slideNumber}</h5>
+                                          <p className="text-sm text-slate-600 mt-1">
+                                            <span className="font-medium">Image:</span> {slide.imageGuideline}
+                                          </p>
+                                          <p className="text-sm text-slate-600">
+                                            <span className="font-medium">Text:</span> {slide.textGuideline}
+                                          </p>
+                                        </Card>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+
+                  {draft.status === 'draft' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleStatusUpdate(draft.id, 'approved')}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleStatusUpdate(draft.id, 'rejected')}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </Button>
+                    </>
+                  )}
+
+                  <Button 
+                    size="sm" 
+                    variant="destructive"
+                    onClick={() => handleDelete(draft.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

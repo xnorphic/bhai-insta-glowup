@@ -108,23 +108,62 @@ export const ContentGenerationDialog = ({
     }
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     const selected = generatedOptions.find(opt => opt.id === selectedOption);
     if (selected) {
-      const formData = {
-        platform,
-        contentType,
-        theme,
-        tone,
-        eventDate: selectedDate
-      };
-      onSaveDraft(selected, formData);
-      onOpenChange(false);
-      // Reset form
-      setGeneratedOptions([]);
-      setSelectedOption(null);
-      setTheme("");
-      setTone("");
+      try {
+        const formData = {
+          platform,
+          contentType,
+          theme,
+          tone,
+          eventDate: selectedDate
+        };
+
+        // Get current user data
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Get username from users table
+        const { data: userData } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+
+        // Save to drafts table
+        const { error } = await supabase
+          .from('drafts')
+          .insert([{
+            user_id: user.id,
+            content_data: selected,
+            form_data: formData,
+            created_by_username: userData?.username || user.email || 'Unknown User'
+          }] as any);
+
+        if (error) throw error;
+
+        onSaveDraft(selected, formData);
+        onOpenChange(false);
+        
+        // Reset form
+        setGeneratedOptions([]);
+        setSelectedOption(null);
+        setTheme("");
+        setTone("");
+
+        toast({
+          title: "Draft Saved",
+          description: "Your content has been saved as a draft for review.",
+        });
+      } catch (error) {
+        console.error('Error saving draft:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save draft. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
