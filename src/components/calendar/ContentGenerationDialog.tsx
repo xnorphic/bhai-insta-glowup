@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Sparkles, Clock, Save } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentOption {
   id: string;
@@ -41,6 +44,8 @@ export const ContentGenerationDialog = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedOptions, setGeneratedOptions] = useState<ContentOption[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
   const toneOptions = [
     "Professional",
@@ -54,85 +59,53 @@ export const ContentGenerationDialog = ({
 
   const generateContent = async () => {
     setIsGenerating(true);
-    
-    // Mock generation - replace with actual AI API call
-    const mockOptions: ContentOption[] = [
-      {
-        id: "1",
-        mainTheme: "Career Growth & Opportunities",
-        caption: "🚀 Ready to take your career to the next level? Discover thousands of opportunities waiting for you on Naukri.com. Your dream job is just a click away! #CareerGrowth #DreamJob #Naukri",
-        imagePrompt: "Professional office setting with diverse employees collaborating, modern workspace with Naukri.com branding, bright and motivational lighting, corporate blue and orange color scheme",
-        carouselSlides: contentType === "carousel" ? [
-          {
-            slideNumber: 1,
-            imageGuideline: "Hero shot of a professional looking at laptop with job listings",
-            textGuideline: "Your Career Journey Starts Here"
-          },
-          {
-            slideNumber: 2,
-            imageGuideline: "Multiple job category icons and statistics",
-            textGuideline: "10 Million+ Jobs Across Industries"
-          },
-          {
-            slideNumber: 3,
-            imageGuideline: "Success story visual with employee testimonial",
-            textGuideline: "Join 70 Million+ Job Seekers"
-          }
-        ] : undefined
-      },
-      {
-        id: "2",
-        mainTheme: "Skill Development & Learning",
-        caption: "💡 Invest in yourself! Upskill with Naukri.com's learning resources and stay ahead in your career. Knowledge is your competitive advantage. #SkillDevelopment #LearningNeverStops #CareerTips",
-        imagePrompt: "Modern learning environment with books, digital devices, and skill icons floating around, professional setting with warm lighting, knowledge and growth theme",
-        carouselSlides: contentType === "carousel" ? [
-          {
-            slideNumber: 1,
-            imageGuideline: "Person studying with digital devices and learning materials",
-            textGuideline: "Continuous Learning = Career Success"
-          },
-          {
-            slideNumber: 2,
-            imageGuideline: "Skill categories and certification badges",
-            textGuideline: "100+ Skills to Master"
-          },
-          {
-            slideNumber: 3,
-            imageGuideline: "Before/after career progression visual",
-            textGuideline: "Transform Your Career Today"
-          }
-        ] : undefined
-      },
-      {
-        id: "3",
-        mainTheme: "Recruitment Solutions",
-        caption: "🎯 Looking for top talent? Naukri.com connects you with the best candidates across industries. Streamline your hiring process today! #Recruitment #HiringMadeEasy #TopTalent",
-        imagePrompt: "Corporate boardroom with HR professionals reviewing candidate profiles on screens, professional hiring atmosphere, corporate colors with technology integration",
-        carouselSlides: contentType === "carousel" ? [
-          {
-            slideNumber: 1,
-            imageGuideline: "HR team discussing candidate profiles",
-            textGuideline: "Find the Perfect Match"
-          },
-          {
-            slideNumber: 2,
-            imageGuideline: "Resume database visualization",
-            textGuideline: "Access 70M+ Resumes"
-          },
-          {
-            slideNumber: 3,
-            imageGuideline: "Successful hiring handshake",
-            textGuideline: "Hire Faster, Hire Better"
-          }
-        ] : undefined
-      }
-    ];
+    setProgress(0);
+    setGeneratedOptions([]);
 
-    // Simulate API delay
-    setTimeout(() => {
-      setGeneratedOptions(mockOptions);
+    try {
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 80));
+      }, 200);
+
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          platform,
+          contentType,
+          theme,
+          tone
+        }
+      });
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.options) {
+        setGeneratedOptions(data.options);
+      } else {
+        throw new Error('No content options received');
+      }
+
+      toast({
+        title: "Content Generated",
+        description: `Generated ${data.options.length} content options successfully.`,
+      });
+
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+      setTimeout(() => setProgress(0), 1000);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -249,6 +222,17 @@ export const ContentGenerationDialog = ({
               </>
             )}
           </Button>
+
+          {/* Progress Bar */}
+          {isGenerating && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Generating content with AI...</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="w-full" />
+            </div>
+          )}
 
           {/* Generated Options */}
           {generatedOptions.length > 0 && (
