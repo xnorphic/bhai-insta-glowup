@@ -9,6 +9,7 @@ import { Heart, MessageCircle, Share2, Eye, TrendingUp, Users, Calendar, Target,
 import { CompetitionMetrics } from "./CompetitionMetrics";
 import { TopPerformingPosts } from "./TopPerformingPosts";
 import { AIInsights } from "./AIInsights";
+import { ContentFormatAnalysis } from "./ContentFormatAnalysis";
 
 // Dummy data for demonstration
 const mockData = {
@@ -131,9 +132,10 @@ export const CompetitionAnalysisPage = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="content">Content Analysis</TabsTrigger>
+            <TabsTrigger value="formats">Format Deep Dive</TabsTrigger>
             <TabsTrigger value="insights">AI Insights</TabsTrigger>
           </TabsList>
 
@@ -195,6 +197,22 @@ export const CompetitionAnalysisPage = () => {
                   id: post.id + "_swiggy",
                   caption: "🍽️ " + post.caption.replace("career", "food").replace("job", "meal")
                 }))}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Content Format Deep Dive Tab */}
+          <TabsContent value="formats">
+            <div className="space-y-6">
+              <ContentFormatAnalysis
+                profileName="Naukri.com" 
+                isOwned={true}
+                data={undefined}
+              />
+              <ContentFormatAnalysis
+                profileName="Swiggy India" 
+                isOwned={false}
+                data={undefined}
               />
             </div>
           </TabsContent>

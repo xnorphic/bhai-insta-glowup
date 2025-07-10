@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { BrandbookUpload } from "./brandbook/BrandbookUpload";
 import { BrandbookList } from "./brandbook/BrandbookList";
+import { BrandbookQuestionnaire } from "./brandbook/BrandbookQuestionnaire";
 import type { Json } from "@/integrations/supabase/types";
 
 interface BrandBook {
@@ -39,6 +40,8 @@ export const BrandbookBuilder = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedBrandBook, setSelectedBrandBook] = useState<BrandBook | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -217,22 +220,70 @@ export const BrandbookBuilder = () => {
     setSelectedBrandBook(brandBook);
   };
 
+  const handleQuestionnaireSubmit = async (questionnaireData: any) => {
+    if (!user) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await supabase.functions.invoke('generate-brandbook', {
+        body: { questionnaireData, userId: user.id }
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      toast.success('Brand book generated successfully!');
+      setShowQuestionnaire(false);
+      fetchBrandBooks();
+    } catch (error) {
+      console.error('Error generating brand book:', error);
+      toast.error('Failed to generate brand book: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (showQuestionnaire) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-[#333333]">Brand Book Builder</h1>
+          <Button 
+            onClick={() => setShowQuestionnaire(false)} 
+            variant="outline"
+            disabled={isGenerating}
+          >
+            Back to List
+          </Button>
+        </div>
+        
+        <BrandbookQuestionnaire
+          onSubmit={handleQuestionnaireSubmit}
+          isGenerating={isGenerating}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-[#333333]">Brand Book Builder</h1>
-        <Button onClick={fetchBrandBooks} variant="outline" className="flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setShowQuestionnaire(true)}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Create Brand Book
+          </Button>
+          <Button onClick={fetchBrandBooks} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
-
-      <BrandbookUpload
-        isUploading={isUploading}
-        uploadProgress={uploadProgress}
-        isAnalyzing={isAnalyzing}
-        onFileUpload={handleFileUpload}
-      />
 
       <div className="grid gap-6">
         <h2 className="text-2xl font-semibold text-[#333333]">Your Brand Books</h2>

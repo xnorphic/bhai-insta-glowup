@@ -1,7 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +16,7 @@ interface ContentGenerationRequest {
   contentType: string;
   theme: string;
   tone: string;
+  userId?: string;
 }
 
 serve(async (req) => {
@@ -22,9 +26,45 @@ serve(async (req) => {
   }
 
   try {
-    const { platform, contentType, theme, tone }: ContentGenerationRequest = await req.json();
+    const { platform, contentType, theme, tone, userId }: ContentGenerationRequest = await req.json();
 
-    const systemPrompt = "You are an experienced Social Media Marketer in India - create 2-3 versions of engagement-led quirky post/reel ideas with hooks, captions, tonality, reasoning and imagery as per the brand book uploaded and top performing posts for naukridotcom. It generates quirky and funny content mostly around office circumstances like appraisals, office politics, office friendships,boss-employee relationship, long working hours in India etc. Explain why your suggestions will work by clearly stating what is the target group and the intended feeling it will generate";
+    // Create Supabase client to fetch brand book data
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    let brandBookContext = "";
+    if (userId) {
+      // Fetch the latest brand book for the user
+      const { data: brandBooks } = await supabase
+        .from('brand_books')
+        .select('ai_generated_playbook, tonality, strategy_pillars, what_we_do, what_not_to_do, content_ips')
+        .eq('user_id', userId)
+        .eq('is_analysis_complete', true)
+        .order('upload_timestamp', { ascending: false })
+        .limit(1);
+
+      if (brandBooks && brandBooks.length > 0) {
+        const brandBook = brandBooks[0];
+        brandBookContext = `
+Brand Guidelines:
+- What We Do: ${brandBook.what_we_do || 'Not specified'}
+- Tonality: ${brandBook.tonality || 'Professional yet approachable'}
+- Strategy Pillars: ${brandBook.strategy_pillars || 'Not specified'}
+- Content IPs: ${brandBook.content_ips || 'Not specified'}
+- What Not To Do: ${brandBook.what_not_to_do || 'Not specified'}
+
+${brandBook.ai_generated_playbook ? `Brand Book Context: ${brandBook.ai_generated_playbook.substring(0, 1000)}...` : ''}
+        `;
+      }
+    }
+
+    const systemPrompt = `You are an experienced Social Media Marketer in India. Create 2-3 versions of engagement-led content based on the brand guidelines provided. 
+
+${brandBookContext ? `IMPORTANT: Follow these brand guidelines strictly:
+${brandBookContext}
+
+Ensure all content aligns with the brand's tonality, strategy pillars, and content IPs. Avoid anything mentioned in "What Not To Do".` : 'Generate quirky and funny content mostly around office circumstances like appraisals, office politics, office friendships, boss-employee relationship, long working hours in India etc.'}
+
+Create content that explains why your suggestions will work by clearly stating what is the target group and the intended feeling it will generate.`;
 
     const userPrompt = `Create content for ${platform} - ${contentType} with theme: "${theme}" and tone: "${tone}". 
 

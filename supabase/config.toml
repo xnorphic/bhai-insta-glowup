@@ -19,3 +19,6 @@ enable_email_confirmations = true
 
 [functions.instagram-starapi]
 verify_jwt = true
+
+[functions.generate-brandbook]
+verify_jwt = true
