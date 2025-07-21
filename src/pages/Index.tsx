@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Dashboard } from "@/components/Dashboard";
 import { Home } from "@/components/Home";
 import { InstagramAnalytics } from "@/components/InstagramAnalytics";
+import { InstagramConnect } from "@/components/instagram/InstagramConnect";
 import { CompetitionAnalysis } from "@/components/CompetitionAnalysis";
 import { BrandbookBuilder } from "@/components/BrandbookBuilder";
 import { ContentCalendar } from "@/components/ContentCalendar";
@@ -16,10 +17,10 @@ const Index = () => {
     switch (activeTab) {
       case "home":
         return <Home onTabChange={setActiveTab} />;
-      case "dashboard":
-        return <Dashboard />;
       case "analytics":
         return <InstagramAnalytics />;
+      case "connect":
+        return <InstagramConnect />;
       case "competition":
         return <CompetitionAnalysis />;
       case "brandbook":
