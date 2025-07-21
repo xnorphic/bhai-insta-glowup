@@ -65,33 +65,34 @@ export const Home = ({ onTabChange }: HomeProps) => {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <style>
-        {`
-          @keyframes fadeInScale {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            33% { opacity: 0; transform: scale(0.8); }
-            66% { opacity: 0; transform: scale(0.8); }
-          }
-        `}
-      </style>
-      
       {/* Hero Section */}
       <div className="text-center space-y-6">
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900">
-          Get{" "}
-          <span className="relative inline-block">
-            <span 
-              key={currentWordIndex}
-              className="inline-block animate-fade-in text-primary"
-              style={{
-                animation: "fadeInScale 3s ease-in-out infinite"
-              }}
-            >
-              {words[currentWordIndex]}
+        <div className="space-y-2">
+          {/* First Line */}
+          <div className="text-4xl md:text-6xl font-bold text-gray-900">
+            <span>Get </span>
+            <span className="relative inline-block min-w-[280px] md:min-w-[400px]">
+              <span 
+                key={currentWordIndex}
+                className="inline-block text-primary animate-fadeInScale"
+              >
+                {words[currentWordIndex]}
+              </span>
             </span>
-          </span>
-          {" "}done with AgenticAI
-        </h1>
+            <span> done</span>
+          </div>
+          
+          {/* Second Line */}
+          <div className="text-4xl md:text-6xl font-bold text-gray-900">
+            <span>with Agentic</span>
+            <span 
+              className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent animate-gradientShift"
+            >
+              AI
+            </span>
+          </div>
+        </div>
+        
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Supercharge your social media strategy with AI-powered analytics, content planning, and competitor insights. Use the sidebar to navigate between different features.
         </p>

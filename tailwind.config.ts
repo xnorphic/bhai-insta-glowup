@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -84,11 +85,28 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fadeInScale': {
+					'0%, 100%': { opacity: '1', transform: 'scale(1)' },
+					'33%': { opacity: '0', transform: 'scale(0.8)' },
+					'66%': { opacity: '0', transform: 'scale(0.8)' }
+				},
+				'gradientShift': {
+					'0%, 100%': { 
+						backgroundPosition: '0% 50%',
+						backgroundSize: '200% 200%'
+					},
+					'50%': { 
+						backgroundPosition: '100% 50%',
+						backgroundSize: '200% 200%'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fadeInScale': 'fadeInScale 3s ease-in-out infinite',
+				'gradientShift': 'gradientShift 3s ease-in-out infinite'
 			}
 		}
 	},
