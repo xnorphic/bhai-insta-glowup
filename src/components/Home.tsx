@@ -1,13 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   BarChart3, 
   Calendar, 
   Target, 
   BookOpen, 
-  Link,
-  ArrowRight
+  Link
 } from "lucide-react";
 
 interface HomeProps {
@@ -94,19 +93,18 @@ export const Home = ({ onTabChange }: HomeProps) => {
           {" "}done with AgenticAI
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Supercharge your social media strategy with AI-powered analytics, content planning, and competitor insights
+          Supercharge your social media strategy with AI-powered analytics, content planning, and competitor insights. Use the sidebar to navigate between different features.
         </p>
       </div>
 
-      {/* Feature Cards */}
+      {/* Feature Cards - now display only, no navigation */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
             <Card 
               key={feature.id}
-              className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-primary/20"
-              onClick={() => onTabChange(feature.id)}
+              className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
               <CardContent className="p-6 text-center space-y-4">
                 <div className="flex justify-center">
@@ -120,13 +118,6 @@ export const Home = ({ onTabChange }: HomeProps) => {
                 <p className="text-gray-600 text-sm leading-relaxed">
                   {feature.description}
                 </p>
-                <Button 
-                  variant="ghost" 
-                  className="group-hover:bg-primary group-hover:text-white transition-all w-full"
-                >
-                  Get Started
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
               </CardContent>
             </Card>
           );

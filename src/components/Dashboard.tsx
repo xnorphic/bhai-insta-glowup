@@ -1,18 +1,14 @@
 
-import React, { useState } from "react";
-import { Sidebar } from "./Sidebar";
-import { InstagramAnalytics } from "./InstagramAnalytics";
-import { InstagramConnect } from "./instagram/InstagramConnect";
-import { ContentCalendar } from "./ContentCalendar";
-import { CompetitionAnalysis } from "./CompetitionAnalysis";
-import { BrandbookBuilder } from "./BrandbookBuilder";
-import { Settings } from "./Settings";
+import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
-export const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("analytics");
+interface DashboardProps {
+  children: React.ReactNode;
+}
+
+export const Dashboard = ({ children }: DashboardProps) => {
   const { signOut, user } = useAuth();
 
   const handleSignOut = async () => {
@@ -24,28 +20,9 @@ export const Dashboard = () => {
     }
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "analytics":
-        return <InstagramAnalytics />;
-      case "connect":
-        return <InstagramConnect />;
-      case "calendar":
-        return <ContentCalendar />;
-      case "competition":
-        return <CompetitionAnalysis />;
-      case "brandbook":
-        return <BrandbookBuilder />;
-      case "settings":
-        return <Settings />;
-      default:
-        return <InstagramAnalytics />;
-    }
-  };
-
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      {children}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white shadow-sm border-b px-6 py-4">
@@ -67,7 +44,7 @@ export const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6">
-          {renderContent()}
+          {children}
         </main>
       </div>
     </div>
