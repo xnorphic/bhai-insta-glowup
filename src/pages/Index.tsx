@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Dashboard } from "@/components/Dashboard";
+import { Home } from "@/components/Home";
 import { InstagramAnalytics } from "@/components/InstagramAnalytics";
 import { CompetitionAnalysis } from "@/components/CompetitionAnalysis";
 import { BrandbookBuilder } from "@/components/BrandbookBuilder";
@@ -9,10 +10,12 @@ import { ContentCalendar } from "@/components/ContentCalendar";
 import { Settings } from "@/components/Settings";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("home");
 
   const renderActiveComponent = () => {
     switch (activeTab) {
+      case "home":
+        return <Home onTabChange={setActiveTab} />;
       case "dashboard":
         return <Dashboard />;
       case "analytics":
@@ -26,7 +29,7 @@ const Index = () => {
       case "settings":
         return <Settings />;
       default:
-        return <Dashboard />;
+        return <Home onTabChange={setActiveTab} />;
     }
   };
 

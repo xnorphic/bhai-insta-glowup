@@ -18,6 +18,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const menuItems = [
+    { id: "home", label: "Home", icon: Instagram },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "connect", label: "Connect Instagram", icon: Link },
     { id: "calendar", label: "Content Calendar", icon: Calendar },
