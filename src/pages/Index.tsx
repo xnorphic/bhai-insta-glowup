@@ -14,6 +14,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
 
   const renderActiveComponent = () => {
+    console.log(`Rendering component for activeTab: ${activeTab}`);
     switch (activeTab) {
       case "home":
         return <Home onTabChange={setActiveTab} />;
