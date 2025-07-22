@@ -9,9 +9,11 @@ import { CompetitionAnalysis } from "@/components/CompetitionAnalysis";
 import { BrandbookBuilder } from "@/components/BrandbookBuilder";
 import { ContentCalendar } from "@/components/ContentCalendar";
 import { Settings } from "@/components/Settings";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
+  const isMobile = useIsMobile();
 
   const renderActiveComponent = () => {
     console.log(`Rendering component for activeTab: ${activeTab}`);
@@ -38,7 +40,7 @@ const Index = () => {
   return (
     <Dashboard>
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''} p-4 sm:p-6`}>
         {renderActiveComponent()}
       </div>
     </Dashboard>

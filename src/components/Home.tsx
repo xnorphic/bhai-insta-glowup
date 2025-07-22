@@ -64,14 +64,14 @@ export const Home = ({ onTabChange }: HomeProps) => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8">
       {/* Hero Section */}
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-6 px-4">
         <div className="space-y-2">
           {/* First Line */}
-          <div className="text-4xl md:text-6xl font-bold text-gray-900">
+          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
             <span>Get </span>
-            <span className="relative inline-block min-w-[280px] md:min-w-[400px]">
+            <span className="relative inline-block min-w-[200px] sm:min-w-[280px] md:min-w-[400px]">
               <span 
                 key={currentWordIndex}
                 className="inline-block text-primary animate-fadeInScale"
@@ -83,40 +83,40 @@ export const Home = ({ onTabChange }: HomeProps) => {
           </div>
           
           {/* Second Line */}
-          <div className="text-4xl md:text-6xl font-bold text-gray-900">
-            <span>with Agentic</span>
+          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
+            <span>with Agentic </span>
             <span 
-              className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent animate-gradientShift"
+              className="bg-gradient-primary bg-clip-text text-transparent animate-gradientShift"
             >
               AI
             </span>
           </div>
         </div>
         
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-2">
           Supercharge your social media strategy with AI-powered analytics, content planning, and competitor insights. Use the sidebar to navigate between different features.
         </p>
       </div>
 
-      {/* Feature Cards - now display only, no navigation */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Feature Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-4">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
             <Card 
               key={feature.id}
-              className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="group hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 border-border bg-card"
             >
-              <CardContent className="p-6 text-center space-y-4">
+              <CardContent className="p-4 sm:p-6 text-center space-y-4">
                 <div className="flex justify-center">
-                  <div className="p-3 rounded-full bg-gray-100 group-hover:bg-primary/10 transition-colors">
-                    <Icon className={`w-8 h-8 ${feature.color} group-hover:text-primary transition-colors`} />
+                  <div className="p-3 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
+                    <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-primary group-hover:text-primary transition-colors" />
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-semibold text-card-foreground">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {feature.description}
                 </p>
               </CardContent>
@@ -126,18 +126,18 @@ export const Home = ({ onTabChange }: HomeProps) => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid md:grid-cols-3 gap-6 mt-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8 sm:mt-12 px-4">
         <div className="text-center space-y-2">
-          <h4 className="text-3xl font-bold text-primary">AI-Powered</h4>
-          <p className="text-gray-600">Advanced algorithms for better insights</p>
+          <h4 className="text-2xl sm:text-3xl font-bold text-primary">AI-Powered</h4>
+          <p className="text-muted-foreground text-sm sm:text-base">Advanced algorithms for better insights</p>
         </div>
         <div className="text-center space-y-2">
-          <h4 className="text-3xl font-bold text-primary">Real-time</h4>
-          <p className="text-gray-600">Live data and instant analytics</p>
+          <h4 className="text-2xl sm:text-3xl font-bold text-primary">Real-time</h4>
+          <p className="text-muted-foreground text-sm sm:text-base">Live data and instant analytics</p>
         </div>
         <div className="text-center space-y-2">
-          <h4 className="text-3xl font-bold text-primary">Automated</h4>
-          <p className="text-gray-600">Streamlined workflows and planning</p>
+          <h4 className="text-2xl sm:text-3xl font-bold text-primary">Automated</h4>
+          <p className="text-muted-foreground text-sm sm:text-base">Streamlined workflows and planning</p>
         </div>
       </div>
     </div>

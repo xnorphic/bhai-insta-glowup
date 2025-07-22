@@ -62,31 +62,37 @@ export const InstagramAnalytics = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#333333]">Instagram Analytics</h1>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex justify-between items-center px-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Instagram Analytics</h1>
       </div>
 
       {/* Data Loader */}
-      <DataLoader />
+      <div className="px-4">
+        <DataLoader />
+      </div>
 
       {/* Filters */}
-      <FiltersComponent 
-        filters={filters}
-        onFiltersChange={setFilters}
-        availableProfiles={availableProfiles}
-      />
+      <div className="px-4">
+        <FiltersComponent 
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableProfiles={availableProfiles}
+        />
+      </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
         {statsCards.map((stat, index) => (
-          <Card key={index} className="p-6 bg-white rounded-2xl shadow-lg">
+          <Card key={index} className="p-4 sm:p-6 bg-card border-border shadow-card">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-[hsl(240,70%,70%)]/10 rounded-lg">
-                {stat.icon}
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="text-primary">
+                  {stat.icon}
+                </div>
               </div>
               <div className={`flex items-center space-x-1 ${
-                stat.trend === "up" ? "text-green-600" : "text-orange-500"
+                stat.trend === "up" ? "text-success" : "text-warning"
               }`}>
                 {stat.trend === "up" ? (
                   <TrendingUp className="w-4 h-4" />
@@ -97,45 +103,49 @@ export const InstagramAnalytics = () => {
               </div>
             </div>
             <div className="space-y-1">
-              <h3 className="text-2xl font-bold text-[#333333]">
+              <h3 className="text-xl sm:text-2xl font-bold text-card-foreground">
                 {summaryLoading ? "..." : stat.value}
               </h3>
-              <p className="text-[#666666] text-sm">{stat.title}</p>
+              <p className="text-muted-foreground text-sm">{stat.title}</p>
             </div>
           </Card>
         ))}
       </div>
 
       {/* Performance Chart */}
-      <PerformanceChart 
-        data={performanceData || []} 
-        isLoading={performanceLoading} 
-      />
+      <div className="px-4">
+        <PerformanceChart 
+          data={performanceData || []} 
+          isLoading={performanceLoading} 
+        />
+      </div>
 
       {/* Top Performing Content Card */}
       {summary?.topPerformingPost && (
-        <Card className="p-6 bg-white rounded-2xl shadow-lg">
-          <h3 className="text-xl font-semibold text-[#333333] mb-4">🏆 Top Performing Content</h3>
-          <div className="flex items-start space-x-4">
+        <Card className="mx-4 p-4 sm:p-6 bg-card border-border shadow-card">
+          <h3 className="text-lg sm:text-xl font-semibold text-card-foreground mb-4">
+            🏆 Top Performing Content
+          </h3>
+          <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
             <img 
               src={summary.topPerformingPost.thumbnail_url} 
               alt="Top performing content"
-              className="w-20 h-20 rounded-lg object-cover"
+              className="w-full sm:w-20 h-48 sm:h-20 rounded-lg object-cover"
             />
-            <div className="flex-1">
-              <p className="text-[#333333] font-medium mb-2">
+            <div className="flex-1 space-y-2">
+              <p className="text-card-foreground font-medium">
                 {summary.topPerformingPost.caption || 'No caption available'}
               </p>
-              <div className="flex space-x-4 text-sm text-[#666666] mb-2">
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span>❤️ {summary.topPerformingPost.total_likes.toLocaleString()}</span>
                 <span>💬 {summary.topPerformingPost.total_comments.toLocaleString()}</span>
                 <span>👁️ {summary.topPerformingPost.total_views.toLocaleString()}</span>
               </div>
-              <div className="text-xs text-[#666666]">
+              <div className="text-xs text-muted-foreground">
                 Profile: @{summary.topPerformingPost.tracked_profile_id}
               </div>
               {summary.topPerformingPost.ai_performance_summary && (
-                <p className="text-sm text-[#666666] mt-2 italic">
+                <p className="text-sm text-muted-foreground mt-2 italic">
                   AI Insight: {summary.topPerformingPost.ai_performance_summary}
                 </p>
               )}
@@ -145,20 +155,24 @@ export const InstagramAnalytics = () => {
       )}
 
       {/* Content Table */}
-      <ContentTable 
-        content={contentList || []} 
-        isLoading={contentLoading} 
-      />
+      <div className="px-4">
+        <ContentTable 
+          content={contentList || []} 
+          isLoading={contentLoading} 
+        />
+      </div>
 
       {/* No Data State */}
       {!summaryLoading && (!summary || summary.totalPosts === 0) && (
-        <Card className="p-12 bg-white rounded-2xl shadow-lg text-center">
+        <Card className="mx-4 p-8 sm:p-12 bg-card border-border shadow-card text-center">
           <div className="space-y-4">
-            <div className="w-16 h-16 bg-[hsl(240,70%,70%)]/10 rounded-full flex items-center justify-center mx-auto">
-              <Eye className="w-8 h-8 text-[hsl(240,70%,70%)]" />
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Eye className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold text-[#333333]">No Instagram Data Found</h3>
-            <p className="text-[#666666] max-w-md mx-auto">
+            <h3 className="text-lg sm:text-xl font-semibold text-card-foreground">
+              No Instagram Data Found
+            </h3>
+            <p className="text-muted-foreground max-w-md mx-auto text-sm sm:text-base">
               Use the Data Loader above to fetch Instagram data for analysis. 
               Your analytics dashboard will populate once data is loaded.
             </p>
