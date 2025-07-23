@@ -10,9 +10,11 @@ import {
   Instagram,
   Link,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   activeTab: string;
@@ -22,6 +24,16 @@ interface SidebarProps {
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
   
   const menuItems = [
     { id: "home", label: "Home", icon: Instagram },
@@ -71,7 +83,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
               </div>
               
               {/* Mobile Navigation */}
-              <nav className="p-4">
+              <nav className="flex-1 p-4">
                 <ul className="space-y-2">
                   {menuItems.map((item) => {
                     const Icon = item.icon;
@@ -90,6 +102,21 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                   })}
                 </ul>
               </nav>
+
+              {/* Mobile User Section */}
+              <div className="p-4 border-t border-border">
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="w-5 h-5 mr-3" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -127,6 +154,21 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           })}
         </ul>
       </nav>
+
+      {/* Desktop User Section */}
+      <div className="p-4 border-t border-border">
+        <div className="mb-3">
+          <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          Sign Out
+        </Button>
+      </div>
     </div>
   );
 };

@@ -40,7 +40,7 @@ const Index = () => {
   return (
     <Dashboard>
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''} p-4 sm:p-6`}>
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''} p-6`}>
         {renderActiveComponent()}
       </div>
     </Dashboard>
