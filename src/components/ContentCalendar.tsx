@@ -202,7 +202,7 @@ export const ContentCalendar = () => {
     const draftsForDay = getDraftsForDate(date);
     const approvedDrafts = draftsForDay.filter(d => d.status === 'approved');
     
-    let baseClasses = "h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-primary/10 transition-colors cursor-pointer border border-border";
+    let baseClasses = "h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-primary/10 transition-colors cursor-pointer border border-border";
     
     // Green background for dates with approved drafts
     if (approvedDrafts.length > 0) {
@@ -262,10 +262,10 @@ export const ContentCalendar = () => {
           </TabsList>
 
           <TabsContent value="calendar" className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Calendar */}
-              <div className="xl:col-span-3">
-                <Card className="p-4 sm:p-6 lg:p-8 bg-card/80 backdrop-blur-sm shadow-elevated border-border">
+              <div className="lg:col-span-2">
+                <Card className="p-6 lg:p-8 bg-card/80 backdrop-blur-sm shadow-elevated border-border">
                   <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <h2 className="text-xl sm:text-2xl font-semibold text-card-foreground">Content Calendar</h2>
@@ -285,18 +285,18 @@ export const ContentCalendar = () => {
                       </div>
                     </div>
                     
-                    <div className="calendar-container overflow-x-auto">
+                    <div className="calendar-container">
                       <Calendar
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        className="w-full p-2 sm:p-4 lg:p-6 text-sm sm:text-base lg:text-lg [&_.rdp-day]:h-12 [&_.rdp-day]:w-12 sm:[&_.rdp-day]:h-14 sm:[&_.rdp-day]:w-14 lg:[&_.rdp-day]:h-16 lg:[&_.rdp-day]:w-16 [&_.rdp-cell]:p-1"
+                        className="w-full mx-auto max-w-none scale-110 origin-center"
                         classNames={{
-                          table: "w-full min-w-[320px] border-collapse space-y-2",
-                          head_row: "flex justify-between mb-4",
-                          head_cell: "text-muted-foreground rounded-md w-12 sm:w-14 lg:w-16 font-semibold text-xs sm:text-sm uppercase tracking-wide",
-                          row: "flex w-full mt-3 justify-between",
-                          cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
+                          table: "w-full border-collapse space-y-3",
+                          head_row: "flex justify-between mb-6",
+                          head_cell: "text-muted-foreground rounded-md w-16 sm:w-20 lg:w-24 font-semibold text-sm uppercase tracking-wide",
+                          row: "flex w-full mt-4 justify-between",
+                          cell: "relative p-0 text-center focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
                           day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                           day_today: "bg-accent text-accent-foreground font-semibold",
                           day_outside: "text-muted-foreground opacity-50",
@@ -312,7 +312,7 @@ export const ContentCalendar = () => {
                                 className={`relative ${dayClassName} flex items-center justify-center hover:opacity-90 transition-all`}
                                 onClick={() => handleDateClick(date)}
                               >
-                                <span className="text-sm sm:text-base lg:text-lg font-medium">{date.getDate()}</span>
+                                <span className="text-base lg:text-lg font-medium">{date.getDate()}</span>
                                 {renderCalendarCell(date)}
                               </div>
                             );
@@ -359,21 +359,21 @@ export const ContentCalendar = () => {
                     
                     {/* CSV Import Section */}
                     <div className="space-y-3">
-                      <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="grid grid-cols-1 gap-2">
                         <Button
                           onClick={downloadCsvTemplate}
                           variant="outline"
                           size="sm"
-                          className="flex-1"
+                          className="w-full justify-center"
                         >
                           <Download className="w-4 h-4 mr-2" />
-                          Template
+                          Download Template
                         </Button>
-                        <Label htmlFor="csv-upload" className="flex-1">
+                        <Label htmlFor="csv-upload" className="w-full">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full"
+                            className="w-full justify-center"
                             disabled={importingCsv}
                             asChild
                           >
@@ -394,21 +394,22 @@ export const ContentCalendar = () => {
                     </div>
 
                     {/* Upcoming Important Dates */}
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <h4 className="text-sm font-medium text-muted-foreground">Upcoming Events</h4>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                         {getUpcomingImportantDates().map((date) => (
-                          <div key={date.id} className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
-                            <div className="text-sm font-medium text-orange-800">{date.name}</div>
-                            <div className="text-xs text-orange-600">
-                              {date.date_month} • {date.occasion_type}
+                          <div key={date.id} className="p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                            <div className="text-sm font-medium text-orange-800 leading-tight break-words">{date.name}</div>
+                            <div className="text-xs text-orange-600 mt-1 leading-relaxed break-words">
+                              <span className="block">{date.date_month}</span>
+                              <span className="block">{date.occasion_type}</span>
                             </div>
                           </div>
                         ))}
                         {getUpcomingImportantDates().length === 0 && (
-                          <div className="text-center py-4 text-muted-foreground">
+                          <div className="text-center py-6 text-muted-foreground">
                             <p className="text-sm">No upcoming events</p>
-                            <p className="text-xs">Import dates using CSV above</p>
+                            <p className="text-xs mt-1">Import dates using CSV above</p>
                           </div>
                         )}
                       </div>
