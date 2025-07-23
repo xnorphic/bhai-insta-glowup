@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, Clock, Save } from "lucide-react";
+import { Sparkles, Clock, Save, PenTool, Palette, Video } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,8 +15,18 @@ import { useToast } from "@/hooks/use-toast";
 interface ContentOption {
   id: string;
   mainTheme: string;
-  caption: string;
-  imagePrompt: string;
+  textWriteAgent: {
+    caption: string;
+  };
+  artistAgent: {
+    imagePrompt: string;
+  };
+  videoAgent: {
+    reelIdea: string;
+  };
+  reasoning?: string;
+  targetGroup?: string;
+  intendedFeeling?: string;
   carouselSlides?: {
     slideNumber: number;
     imageGuideline: string;
@@ -288,9 +298,9 @@ export const ContentGenerationDialog = ({
                     }`}
                     onClick={() => setSelectedOption(option.id)}
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline">{option.mainTheme}</Badge>
+                        <Badge variant="outline" className="text-sm font-medium">{option.mainTheme}</Badge>
                         <input
                           type="radio"
                           checked={selectedOption === option.id}
@@ -299,25 +309,63 @@ export const ContentGenerationDialog = ({
                         />
                       </div>
                       
-                      <div>
-                        <h4 className="font-medium mb-2">Caption:</h4>
-                        <p className="text-sm text-muted-foreground">{option.caption}</p>
+                      {/* TextWrite Agent */}
+                      <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 rounded-r-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <PenTool className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-semibold text-blue-800">TextWrite Agent</h4>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-700">Caption:</p>
+                          <p className="text-sm text-blue-600 leading-relaxed">{option.textWriteAgent.caption}</p>
+                        </div>
                       </div>
 
-                      <div>
-                        <h4 className="font-medium mb-2">Image Prompt:</h4>
-                        <p className="text-sm text-muted-foreground">{option.imagePrompt}</p>
+                      {/* Artist Agent */}
+                      <div className="border-l-4 border-purple-500 pl-4 py-2 bg-purple-50/50 rounded-r-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Palette className="w-4 h-4 text-purple-600" />
+                          <h4 className="font-semibold text-purple-800">Artist Agent</h4>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-purple-700">Image Prompt:</p>
+                          <p className="text-sm text-purple-600 leading-relaxed">{option.artistAgent.imagePrompt}</p>
+                        </div>
                       </div>
+
+                      {/* Video Agent */}
+                      <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50/50 rounded-r-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Video className="w-4 h-4 text-green-600" />
+                          <h4 className="font-semibold text-green-800">Video Agent</h4>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-green-700">Reel Idea:</p>
+                          <p className="text-sm text-green-600 leading-relaxed whitespace-pre-line">{option.videoAgent.reelIdea}</p>
+                        </div>
+                      </div>
+
+                      {/* Additional Information */}
+                      {(option.reasoning || option.targetGroup || option.intendedFeeling) && (
+                        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50/50">
+                          <h4 className="font-medium text-gray-800 mb-2">Strategy Insights</h4>
+                          <div className="space-y-1 text-xs text-gray-600">
+                            {option.targetGroup && <p><span className="font-medium">Target:</span> {option.targetGroup}</p>}
+                            {option.intendedFeeling && <p><span className="font-medium">Emotion:</span> {option.intendedFeeling}</p>}
+                            {option.reasoning && <p><span className="font-medium">Why it works:</span> {option.reasoning}</p>}
+                          </div>
+                        </div>
+                      )}
 
                       {option.carouselSlides && (
-                        <div>
-                          <h4 className="font-medium mb-2">Carousel Slides:</h4>
+                        <div className="border border-orange-200 rounded-lg p-3 bg-orange-50/50">
+                          <h4 className="font-medium text-orange-800 mb-2">Carousel Slides:</h4>
                           <div className="space-y-2">
                             {option.carouselSlides.map((slide) => (
-                              <div key={slide.slideNumber} className="bg-muted/30 p-2 rounded">
-                                <p className="text-xs font-medium">Slide {slide.slideNumber}</p>
-                                <p className="text-xs">Image: {slide.imageGuideline}</p>
-                                <p className="text-xs">Text: {slide.textGuideline}</p>
+                              <div key={slide.slideNumber} className="bg-white p-2 rounded border border-orange-200">
+                                <p className="text-xs font-medium text-orange-700">Slide {slide.slideNumber}</p>
+                                <p className="text-xs text-orange-600 mt-1">Image: {slide.imageGuideline}</p>
+                                <p className="text-xs text-orange-600">Text: {slide.textGuideline}</p>
                               </div>
                             ))}
                           </div>

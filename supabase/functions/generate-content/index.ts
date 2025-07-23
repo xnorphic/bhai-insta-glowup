@@ -67,22 +67,34 @@ Ensure all content aligns with the brand's tonality, strategy pillars, and conte
 Create content that explains why your suggestions will work by clearly stating what is the target group and the intended feeling it will generate.`;
 
     const userPrompt = `Create content for ${platform} - ${contentType} with theme: "${theme}" and tone: "${tone}". 
-
-    Please provide 2-3 content options in the following JSON format:
+    
+    Please provide 2-3 content options in the following JSON format with THREE specific agent recommendations for each:
     {
       "options": [
         {
           "id": "1",
           "mainTheme": "Main theme title",
-          "caption": "Full caption with hooks and engagement elements",
-          "imagePrompt": "Detailed image prompt (minimum 100 words) focusing on composition, lighting, background, focus, color scheme, mood, camera angle, visual elements, setting details, character positioning, props, atmosphere, visual style, and brand elements",
+          "textWriteAgent": {
+            "caption": "Full engaging caption with hooks, storytelling elements, and clear call-to-action"
+          },
+          "artistAgent": {
+            "imagePrompt": "Detailed image prompt (minimum 150 words) for creating visuals - include composition, lighting, background, focus, color scheme, mood, camera angle, visual elements, setting details, character positioning, props, atmosphere, visual style, and brand elements"
+          },
+          "videoAgent": {
+            "reelIdea": "Complete video reel concept with: HOOK (attention-grabbing opening 3-5 seconds), SCREENPLAY (step-by-step scenes that can be shot with point-and-shoot camera), and CTA (clear call-to-action). Include specific camera angles, simple props needed, and practical shooting tips for non-professional setup."
+          },
           "reasoning": "Why this will work and target audience",
           "targetGroup": "Specific target audience",
-          "intendedFeeling": "Emotion this content aims to generate",
-          ${contentType === 'carousel' ? '"carouselSlides": [{"slideNumber": 1, "imageGuideline": "Slide 1 image description", "textGuideline": "Slide 1 text content"}, {"slideNumber": 2, "imageGuideline": "Slide 2 image description", "textGuideline": "Slide 2 text content"}, {"slideNumber": 3, "imageGuideline": "Slide 3 image description", "textGuideline": "Slide 3 text content"}],' : ''}
+          "intendedFeeling": "Emotion this content aims to generate"${contentType === 'carousel' ? ',\n          "carouselSlides": [{"slideNumber": 1, "imageGuideline": "Slide 1 image description", "textGuideline": "Slide 1 text content"}, {"slideNumber": 2, "imageGuideline": "Slide 2 image description", "textGuideline": "Slide 2 text content"}, {"slideNumber": 3, "imageGuideline": "Slide 3 image description", "textGuideline": "Slide 3 text content"}]' : ''}
         }
       ]
-    }`;
+    }
+
+    IMPORTANT: For the Video Agent reel ideas, ensure they are:
+    - Practical for smartphone/point-and-shoot cameras
+    - Include specific hook, screenplay with scenes, and clear CTA
+    - Mention required props and camera setup
+    - Keep shooting simple but engaging`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -120,8 +132,15 @@ Create content that explains why your suggestions will work by clearly stating w
           {
             id: "1",
             mainTheme: "Career Growth & Appraisal Season",
-            caption: "🎯 POV: It's appraisal season and you're updating your resume while sitting in office WiFi 😂 We've all been there! But here's the thing - while you're plotting your next move, make sure you're plotting it RIGHT! 💼✨ Naukri.com has 10M+ opportunities waiting for you. Stop dreaming, start applying! #AppraisalSeason #CareerGrowth #NaukriLife #OfficeStruggles",
-            imagePrompt: "Create a vibrant, professionally composed image showcasing a young Indian professional (25-30 years) sitting at a modern office desk with warm, natural lighting streaming through large windows. The composition should be shot from a slightly elevated angle, focusing on the person's concentrated expression as they work on a laptop displaying job listings. The background should feature a contemporary Indian office environment with subtle orange and blue brand elements (Naukri colors) integrated naturally. Include props like a coffee cup, notepad, and smartphone displaying notifications. The lighting should be bright and optimistic with soft shadows, creating a sense of hope and opportunity. The visual style should be clean, modern, and aspirational, with depth of field highlighting the main subject while keeping office colleagues slightly blurred in the background. Color palette should emphasize warm oranges, professional blues, and clean whites to convey trust and energy.",
+            textWriteAgent: {
+              caption: "🎯 POV: It's appraisal season and you're updating your resume while sitting in office WiFi 😂 We've all been there! But here's the thing - while you're plotting your next move, make sure you're plotting it RIGHT! 💼✨ Naukri.com has 10M+ opportunities waiting for you. Stop dreaming, start applying! #AppraisalSeason #CareerGrowth #NaukriLife #OfficeStruggles"
+            },
+            artistAgent: {
+              imagePrompt: "Create a vibrant, professionally composed image showcasing a young Indian professional (25-30 years) sitting at a modern office desk with warm, natural lighting streaming through large windows. The composition should be shot from a slightly elevated angle, focusing on the person's concentrated expression as they work on a laptop displaying job listings. The background should feature a contemporary Indian office environment with subtle orange and blue brand elements integrated naturally. Include props like a coffee cup, notepad, and smartphone displaying notifications. The lighting should be bright and optimistic with soft shadows, creating a sense of hope and opportunity. The visual style should be clean, modern, and aspirational, with depth of field highlighting the main subject while keeping office colleagues slightly blurred in the background."
+            },
+            videoAgent: {
+              reelIdea: "HOOK (0-3s): Quick zoom into person's laptop screen showing 'Annual Appraisal Results' with dramatic music stop. SCREENPLAY: Scene 1 - Close-up of disappointed face reading appraisal (3-7s). Scene 2 - Cut to same person secretly browsing Naukri on phone under desk (7-12s). Scene 3 - Montage of job applications being submitted with upbeat music (12-18s). Scene 4 - Final shot of person confidently walking into new office (18-25s). CTA: 'Ready for YOUR upgrade? Download Naukri app now!' PROPS NEEDED: Laptop, smartphone, office desk, simple office clothes. CAMERA SETUP: Use phone's portrait mode, natural office lighting, steady hand or simple tripod."
+            },
             reasoning: "Targets working professionals during appraisal season when job switching is highest",
             targetGroup: "Working professionals aged 25-35 in corporate jobs",
             intendedFeeling: "Relatability and motivation to take action"
@@ -129,8 +148,15 @@ Create content that explains why your suggestions will work by clearly stating w
           {
             id: "2",
             mainTheme: "Office Politics & Survival Guide",
-            caption: "📚 Chapter 1 of 'How to Survive Office Politics' 101: When your manager says 'We need to talk' 😅 Plot twist - maybe it's time for a new chapter entirely? 🔄 Life's too short for toxic workplaces. Find your happy workspace at Naukri.com! 🌟 #OfficePolitics #WorkplaceWellness #NewBeginnings #ToxicWorkplace",
-            imagePrompt: "Design a cinematic, wide-angle shot of a modern Indian office setting with dramatic but professional lighting. The main focus should be on a meeting room with glass walls, where we can see silhouettes of people in discussion. The composition should use leading lines created by office corridors and furniture to draw attention to the central meeting room. Incorporate subtle storytelling elements like worried expressions visible through the glass, while maintaining a professional aesthetic. The lighting should create interesting shadows and highlights, suggesting both tension and opportunity. Background should include typical Indian office elements like motivational posters, team photos, and modern furniture. Use a color scheme that balances professional grays and whites with pops of Naukri's orange brand color appearing naturally in office decor. The visual style should be slightly dramatic but not overly dark, conveying the stress of office politics while hinting at brighter opportunities ahead. Camera angle should be at eye level to create connection with viewers.",
+            textWriteAgent: {
+              caption: "📚 Chapter 1 of 'How to Survive Office Politics' 101: When your manager says 'We need to talk' 😅 Plot twist - maybe it's time for a new chapter entirely? 🔄 Life's too short for toxic workplaces. Find your happy workspace at Naukri.com! 🌟 #OfficePolitics #WorkplaceWellness #NewBeginnings #ToxicWorkplace"
+            },
+            artistAgent: {
+              imagePrompt: "Design a cinematic, wide-angle shot of a modern Indian office setting with dramatic but professional lighting. The main focus should be on a meeting room with glass walls, where we can see silhouettes of people in discussion. The composition should use leading lines created by office corridors and furniture to draw attention to the central meeting room. Incorporate subtle storytelling elements like worried expressions visible through the glass, while maintaining a professional aesthetic. The lighting should create interesting shadows and highlights, suggesting both tension and opportunity. Background should include typical Indian office elements like motivational posters, team photos, and modern furniture."
+            },
+            videoAgent: {
+              reelIdea: "HOOK (0-3s): Text overlay 'When your boss says we need to talk' with suspenseful zoom. SCREENPLAY: Scene 1 - Person nervously walking to meeting room, shot from behind (3-8s). Scene 2 - Tense conversation through glass walls, focus on body language (8-15s). Scene 3 - Person looking stressed, then pulls out phone to browse jobs (15-20s). Scene 4 - Transition to same person in a bright, happy new office environment (20-28s). CTA: 'Don't just survive, THRIVE! Find better opportunities on Naukri!' PROPS NEEDED: Office meeting room, glass walls or door, smartphone, professional attire. CAMERA SETUP: Use portrait mode, film through glass for dramatic effect, natural office lighting."
+            },
             reasoning: "Addresses universal office experiences that create emotional connection",
             targetGroup: "Mid-level professionals experiencing workplace stress",
             intendedFeeling: "Relief and empowerment to make a change"
