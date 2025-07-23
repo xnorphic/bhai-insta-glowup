@@ -292,11 +292,11 @@ export const ContentCalendar = () => {
                         onSelect={setSelectedDate}
                         className="w-full mx-auto"
                         classNames={{
-                          table: "w-full border-collapse",
-                          head_row: "flex justify-between mb-4",
-                          head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm uppercase tracking-wide text-center",
-                          row: "flex w-full justify-between",
-                          cell: "flex-1 p-1 text-center focus-within:relative focus-within:z-20",
+                          table: "w-full border-collapse border-spacing-2",
+                          head_row: "flex justify-between mb-4 gap-2",
+                          head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm uppercase tracking-wide text-center min-w-[60px]",
+                          row: "flex w-full justify-between gap-2 mb-2",
+                          cell: "flex-1 text-center focus-within:relative focus-within:z-20 min-w-[60px]",
                           day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                           day_today: "bg-accent text-accent-foreground font-semibold",
                           day_outside: "text-muted-foreground opacity-50",
@@ -318,7 +318,7 @@ export const ContentCalendar = () => {
                             
                             return (
                               <div 
-                                className={`relative w-full aspect-square min-h-[60px] ${bgColor} rounded-lg border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
+                                className={`relative w-full aspect-square max-w-[80px] mx-auto ${bgColor} rounded-lg border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
                                 onClick={() => handleDateClick(date)}
                               >
                                 <span className="text-base font-medium">{date.getDate()}</span>
