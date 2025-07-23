@@ -11,6 +11,7 @@ import { Sparkles, Clock, Save, PenTool, Palette, Video } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ContentOption {
   id: string;
@@ -56,6 +57,7 @@ export const ContentGenerationDialog = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const toneOptions = [
     "Professional",
@@ -83,7 +85,8 @@ export const ContentGenerationDialog = ({
           platform,
           contentType,
           theme,
-          tone
+          tone,
+          userId: user?.id
         }
       });
 
@@ -91,19 +94,43 @@ export const ContentGenerationDialog = ({
       setProgress(100);
 
       if (error) {
+        console.error('Supabase function error:', error);
         throw error;
       }
 
-      if (data?.options) {
-        setGeneratedOptions(data.options);
-      } else {
-        throw new Error('No content options received');
-      }
+      console.log('API Response:', data);
 
-      toast({
-        title: "Content Generated",
-        description: `Generated ${data.options.length} content options successfully.`,
-      });
+      if (data?.options && Array.isArray(data.options)) {
+        // Ensure the data structure matches our interface
+        const processedOptions = data.options.map((option: any) => ({
+          id: option.id || Math.random().toString(),
+          mainTheme: option.mainTheme || 'Generated Content',
+          textWriteAgent: {
+            caption: option.textWriteAgent?.caption || option.caption || 'No caption available'
+          },
+          artistAgent: {
+            imagePrompt: option.artistAgent?.imagePrompt || option.imagePrompt || 'No image prompt available'
+          },
+          videoAgent: {
+            reelIdea: option.videoAgent?.reelIdea || 'No video idea available'
+          },
+          reasoning: option.reasoning,
+          targetGroup: option.targetGroup,
+          intendedFeeling: option.intendedFeeling,
+          carouselSlides: option.carouselSlides
+        }));
+        
+        console.log('Processed Options:', processedOptions);
+        setGeneratedOptions(processedOptions);
+        
+        toast({
+          title: "Content Generated",
+          description: `Generated ${processedOptions.length} content options successfully.`,
+        });
+      } else {
+        console.error('Invalid response format:', data);
+        throw new Error('No valid content options received');
+      }
 
     } catch (error) {
       console.error('Error generating content:', error);
@@ -179,17 +206,19 @@ export const ContentGenerationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white" aria-describedby="content-generation-description">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-2xl">
             <Sparkles className="w-6 h-6 text-primary" />
             <span>AI Content Generator</span>
           </DialogTitle>
-          {selectedDate && (
-            <p className="text-muted-foreground">
-              Creating content for {selectedDate.toLocaleDateString()}
-            </p>
-          )}
+          <div id="content-generation-description" className="text-muted-foreground">
+            {selectedDate ? (
+              <>Creating content for {selectedDate.toLocaleDateString()}</>
+            ) : (
+              <>Generate AI-powered content ideas for your social media</>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">

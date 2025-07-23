@@ -27,6 +27,8 @@ serve(async (req) => {
 
   try {
     const { platform, contentType, theme, tone, userId }: ContentGenerationRequest = await req.json();
+    
+    console.log('Request received:', { platform, contentType, theme, tone, userId });
 
     // Create Supabase client to fetch brand book data
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -118,12 +120,15 @@ Create content that explains why your suggestions will work by clearly stating w
     }
 
     const data = await response.json();
+    console.log('OpenAI response:', data);
     const generatedContent = data.choices[0].message.content;
+    console.log('Generated content:', generatedContent);
 
     // Try to parse JSON, fallback to mock data if parsing fails
     let parsedContent;
     try {
       parsedContent = JSON.parse(generatedContent);
+      console.log('Parsed content:', parsedContent);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
       // Fallback to enhanced mock data
@@ -165,6 +170,7 @@ Create content that explains why your suggestions will work by clearly stating w
       };
     }
 
+    console.log('Final response:', parsedContent);
     return new Response(JSON.stringify(parsedContent), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
