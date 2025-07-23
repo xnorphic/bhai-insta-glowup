@@ -290,13 +290,13 @@ export const ContentCalendar = () => {
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        className="w-full mx-auto max-w-none scale-110 origin-center"
+                        className="w-full mx-auto"
                         classNames={{
-                          table: "w-full border-collapse space-y-3",
-                          head_row: "flex justify-between mb-6",
-                          head_cell: "text-muted-foreground rounded-md w-16 sm:w-20 lg:w-24 font-semibold text-sm uppercase tracking-wide",
-                          row: "flex w-full mt-4 justify-between",
-                          cell: "relative p-0 text-center focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
+                          table: "w-full border-collapse",
+                          head_row: "flex justify-between mb-4",
+                          head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm uppercase tracking-wide text-center",
+                          row: "flex w-full justify-between",
+                          cell: "flex-1 p-1 text-center focus-within:relative focus-within:z-20",
                           day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                           day_today: "bg-accent text-accent-foreground font-semibold",
                           day_outside: "text-muted-foreground opacity-50",
@@ -306,14 +306,34 @@ export const ContentCalendar = () => {
                         }}
                         components={{
                           DayContent: ({ date }) => {
-                            const dayClassName = getDayClassName(date);
+                            const draftsForDay = getDraftsForDate(date);
+                            const importantDatesForDay = getImportantDatesForDate(date);
+                            const approvedDrafts = draftsForDay.filter(d => d.status === 'approved');
+                            const pendingDrafts = draftsForDay.filter(d => d.status === 'draft');
+                            
+                            let bgColor = "bg-card/50 hover:bg-card/70";
+                            if (approvedDrafts.length > 0) {
+                              bgColor = "bg-green-100 hover:bg-green-200 border-green-300";
+                            }
+                            
                             return (
                               <div 
-                                className={`relative ${dayClassName} flex items-center justify-center hover:opacity-90 transition-all`}
+                                className={`relative w-full aspect-square min-h-[60px] ${bgColor} rounded-lg border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
                                 onClick={() => handleDateClick(date)}
                               >
-                                <span className="text-base lg:text-lg font-medium">{date.getDate()}</span>
-                                {renderCalendarCell(date)}
+                                <span className="text-base font-medium">{date.getDate()}</span>
+                                
+                                {/* Pending drafts indicator */}
+                                {pendingDrafts.length > 0 && (
+                                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                                    {pendingDrafts.length}
+                                  </div>
+                                )}
+                                
+                                {/* Important dates indicator */}
+                                {importantDatesForDay.length > 0 && (
+                                  <div className="absolute top-1 right-1 w-2 h-2 bg-orange-400 rounded-full"></div>
+                                )}
                               </div>
                             );
                           }
