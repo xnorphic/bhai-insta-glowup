@@ -4,25 +4,122 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { CalendarDays, Star, Plus, Sparkles } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarDays, Star, Plus, Sparkles, Upload, Download } from "lucide-react";
+import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { Database } from "@/integrations/supabase/types";
 import { useCalendar } from "@/hooks/useCalendar";
 import { useDrafts } from "@/hooks/useDrafts";
 import { ContentGenerationDialog } from "@/components/calendar/ContentGenerationDialog";
 import { DraftManagement } from "@/components/calendar/DraftManagement";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ContentCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
   const [selectedTabEvent, setSelectedTabEvent] = useState<any>(null);
+  const [importingCsv, setImportingCsv] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const { events, importantDates, loading } = useCalendar();
+  const { events, importantDates, loading, refreshEvents } = useCalendar();
   const { drafts } = useDrafts();
+
+  // CSV Import functionality
+  const handleCsvImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportingCsv(true);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').slice(1); // Skip header row
+      const importedDates = [];
+
+      for (const line of lines) {
+        const [date_month, name, occasion_type, region_notes] = line.split(',').map(s => s.trim().replace(/"/g, ''));
+        if (date_month && name && occasion_type) {
+          importedDates.push({
+            date_month,
+            name,
+            occasion_type,
+            region_notes: region_notes || null,
+            is_fixed_date: !date_month.includes('varies')
+          });
+        }
+      }
+
+      if (importedDates.length > 0) {
+        const { error } = await supabase
+          .from('important_dates')
+          .insert(importedDates);
+
+        if (error) throw error;
+
+        await refreshEvents();
+        toast({
+          title: "CSV Imported Successfully",
+          description: `Imported ${importedDates.length} important dates.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      toast({
+        title: "Import Failed",
+        description: "Failed to import CSV. Please check the format.",
+        variant: "destructive",
+      });
+    } finally {
+      setImportingCsv(false);
+      event.target.value = ''; // Reset input
+    }
+  };
+
+  const downloadCsvTemplate = () => {
+    const csvContent = "date_month,name,occasion_type,region_notes\n" +
+      "January 1,New Year's Day,Holiday,Global\n" +
+      "February 14,Valentine's Day,Holiday,Western cultures\n" +
+      "March (varies),Mother's Day,Holiday,Varies by country\n" +
+      "December 25,Christmas Day,Holiday,Christian countries";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'important_dates_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Get upcoming important dates (today and later)
+  const getUpcomingImportantDates = () => {
+    const today = startOfDay(new Date());
+    
+    return importantDates.filter(importantDate => {
+      // Handle fixed dates
+      if (importantDate.is_fixed_date && !importantDate.date_month.includes('varies')) {
+        try {
+          const dateStr = importantDate.date_month;
+          const currentYear = new Date().getFullYear();
+          const parsedDate = new Date(`${dateStr}, ${currentYear}`);
+          
+          if (isNaN(parsedDate.getTime())) return false;
+          
+          return isToday(parsedDate) || isAfter(parsedDate, today);
+        } catch {
+          return false;
+        }
+      }
+      
+      // For varying dates, show them all as they could be relevant
+      return true;
+    }).slice(0, 5); // Limit to next 5 events
+  };
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -86,35 +183,35 @@ export const ContentCalendar = () => {
 
     return (
       <div className="relative w-full h-full">
+        {/* Pending drafts count - show number in orange circle */}
+        {pendingDrafts.length > 0 && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+            {pendingDrafts.length}
+          </div>
+        )}
+        
         {/* Important Dates Indicator */}
         {importantDatesForDay.length > 0 && (
           <div className="absolute top-0 right-0 w-2 h-2 bg-orange-400 rounded-full"></div>
         )}
-        
-        {/* Approved Content Indicator */}
-        {approvedDrafts.length > 0 && (
-          <div className="absolute top-0 left-0 w-2 h-2 bg-green-500 rounded-full"></div>
-        )}
-        
-        {/* Draft Ideas Indicator */}
-        {pendingDrafts.length > 0 && (
-          <div className="absolute bottom-0 right-0 w-2 h-2 bg-blue-400 rounded-full"></div>
-        )}
-
-        {/* Count badges for multiple items */}
-        {importantDatesForDay.length > 1 && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
-            {importantDatesForDay.length}
-          </div>
-        )}
-        
-        {(approvedDrafts.length > 1 || pendingDrafts.length > 1) && (
-          <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center">
-            {approvedDrafts.length + pendingDrafts.length}
-          </div>
-        )}
       </div>
     );
+  };
+
+  const getDayClassName = (date: Date) => {
+    const draftsForDay = getDraftsForDate(date);
+    const approvedDrafts = draftsForDay.filter(d => d.status === 'approved');
+    
+    let baseClasses = "h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-primary/10 transition-colors cursor-pointer border border-border";
+    
+    // Green background for dates with approved drafts
+    if (approvedDrafts.length > 0) {
+      baseClasses += " bg-green-100 hover:bg-green-200 border-green-300";
+    } else {
+      baseClasses += " bg-card/50";
+    }
+    
+    return baseClasses;
   };
 
   if (loading) {
@@ -200,7 +297,6 @@ export const ContentCalendar = () => {
                           head_cell: "text-muted-foreground rounded-md w-12 sm:w-14 lg:w-16 font-semibold text-xs sm:text-sm uppercase tracking-wide",
                           row: "flex w-full mt-3 justify-between",
                           cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
-                          day: "h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-primary/10 transition-colors cursor-pointer border border-border bg-card/50",
                           day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                           day_today: "bg-accent text-accent-foreground font-semibold",
                           day_outside: "text-muted-foreground opacity-50",
@@ -209,15 +305,18 @@ export const ContentCalendar = () => {
                           day_hidden: "invisible",
                         }}
                         components={{
-                          DayContent: ({ date }) => (
-                            <div 
-                              className="relative w-full h-full flex items-center justify-center hover:bg-primary/5 rounded-xl transition-colors"
-                              onClick={() => handleDateClick(date)}
-                            >
-                              <span className="text-sm sm:text-base lg:text-lg font-medium">{date.getDate()}</span>
-                              {renderCalendarCell(date)}
-                            </div>
-                          )
+                          DayContent: ({ date }) => {
+                            const dayClassName = getDayClassName(date);
+                            return (
+                              <div 
+                                className={`relative ${dayClassName} flex items-center justify-center hover:opacity-90 transition-all`}
+                                onClick={() => handleDateClick(date)}
+                              >
+                                <span className="text-sm sm:text-base lg:text-lg font-medium">{date.getDate()}</span>
+                                {renderCalendarCell(date)}
+                              </div>
+                            );
+                          }
                         }}
                       />
                     </div>
@@ -247,6 +346,73 @@ export const ContentCalendar = () => {
                       <Sparkles className="w-4 h-4 mr-2" />
                       Generate Content Now
                     </Button>
+                  </div>
+                </Card>
+
+                {/* CSV Import & Important Dates */}
+                <Card className="p-4 sm:p-6 bg-card/80 backdrop-blur-sm shadow-card border-border">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-card-foreground">Important Dates</h3>
+                    </div>
+                    
+                    {/* CSV Import Section */}
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          onClick={downloadCsvTemplate}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Template
+                        </Button>
+                        <Label htmlFor="csv-upload" className="flex-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            disabled={importingCsv}
+                            asChild
+                          >
+                            <span>
+                              <Upload className="w-4 h-4 mr-2" />
+                              {importingCsv ? 'Importing...' : 'Import CSV'}
+                            </span>
+                          </Button>
+                          <Input
+                            id="csv-upload"
+                            type="file"
+                            accept=".csv"
+                            onChange={handleCsvImport}
+                            className="hidden"
+                          />
+                        </Label>
+                      </div>
+                    </div>
+
+                    {/* Upcoming Important Dates */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">Upcoming Events</h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {getUpcomingImportantDates().map((date) => (
+                          <div key={date.id} className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                            <div className="text-sm font-medium text-orange-800">{date.name}</div>
+                            <div className="text-xs text-orange-600">
+                              {date.date_month} • {date.occasion_type}
+                            </div>
+                          </div>
+                        ))}
+                        {getUpcomingImportantDates().length === 0 && (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <p className="text-sm">No upcoming events</p>
+                            <p className="text-xs">Import dates using CSV above</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </Card>
 
