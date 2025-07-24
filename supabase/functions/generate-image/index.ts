@@ -59,8 +59,7 @@ serve(async (req) => {
         prompt: prompt,
         n: 1,
         size: openAISize,
-        quality: 'hd',
-        style: 'vivid'
+        quality: 'high'
       }),
     });
 
