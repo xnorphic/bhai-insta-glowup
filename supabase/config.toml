@@ -22,3 +22,6 @@ verify_jwt = true
 
 [functions.generate-brandbook]
 verify_jwt = true
+
+[functions.generate-image]
+verify_jwt = true

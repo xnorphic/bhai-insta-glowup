@@ -15,6 +15,7 @@ import { useCalendar } from "@/hooks/useCalendar";
 import { useDrafts } from "@/hooks/useDrafts";
 import { ContentGenerationDialog } from "@/components/calendar/ContentGenerationDialog";
 import { DraftManagement } from "@/components/calendar/DraftManagement";
+import { ImageGeneration } from "@/components/calendar/ImageGeneration";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ContentCalendar = () => {
@@ -252,12 +253,15 @@ export const ContentCalendar = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="calendar" className="space-y-6">
-          <TabsList className="grid w-fit grid-cols-2 bg-card/60 backdrop-blur-sm border-border">
+          <TabsList className="grid w-fit grid-cols-3 bg-card/60 backdrop-blur-sm border-border">
             <TabsTrigger value="calendar" className="data-[state=active]:bg-card">
               <span className="hidden sm:inline">Calendar </span>View
             </TabsTrigger>
             <TabsTrigger value="drafts" className="data-[state=active]:bg-card">
               <span className="hidden sm:inline">Draft </span>Management
+            </TabsTrigger>
+            <TabsTrigger value="images" className="data-[state=active]:bg-card">
+              <span className="hidden sm:inline">Image </span>Generator
             </TabsTrigger>
           </TabsList>
 
@@ -524,6 +528,10 @@ export const ContentCalendar = () => {
 
           <TabsContent value="drafts" className="space-y-6">
             <DraftManagement />
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-6">
+            <ImageGeneration />
           </TabsContent>
         </Tabs>
 
