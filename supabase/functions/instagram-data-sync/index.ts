@@ -57,14 +57,20 @@ async function fetchFromStarAPI(endpoint: string, profileId: string): Promise<an
     throw new Error('STARAPI_KEY not configured');
   }
 
-  const response = await fetch(`https://api.starapi.com/v1/${endpoint}`, {
+  const apiUrl = endpoint === 'user/info' 
+    ? 'https://starapi1.p.rapidapi.com/instagram/user/info'
+    : 'https://starapi1.p.rapidapi.com/instagram/user/posts';
+
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'X-RapidAPI-Key': apiKey,
+      'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      username: profileId
+      username: profileId,
+      ...(endpoint === 'user/posts' && { limit: 50 })
     })
   });
 
@@ -129,11 +135,11 @@ async function syncProfileData(supabase: any, profileId: string, logId: string) 
     const { error: updateError } = await supabase
       .from('instagram_connections')
       .update({
-        follower_count: profileData.data.user.follower_count,
-        following_count: profileData.data.user.following_count,
-        media_count: profileData.data.user.media_count,
-        is_business_account: profileData.data.user.is_business_account,
-        profile_picture_url: profileData.data.user.profile_pic_url,
+        follower_count: profileData.follower_count || 0,
+        following_count: profileData.following_count || 0,
+        media_count: profileData.media_count || 0,
+        is_business_account: profileData.is_business_account || false,
+        profile_picture_url: profileData.profile_picture_url || null,
         last_sync_at: new Date().toISOString()
       })
       .eq('username', profileId);
@@ -165,10 +171,10 @@ async function syncContentData(supabase: any, profileId: string, logId: string) 
   
   try {
     // Fetch media data
-    const mediaData = await fetchFromStarAPI('user/media', profileId);
+    const mediaData = await fetchFromStarAPI('user/posts', profileId);
     await supabase.rpc('increment_api_calls', { profile_username: profileId });
 
-    if (!mediaData.data?.media || !Array.isArray(mediaData.data.media)) {
+    if (!mediaData.data || !Array.isArray(mediaData.data)) {
       console.log(`No media data found for ${profileId}`);
       return { success: true, created: 0, updated: 0 };
     }
@@ -178,10 +184,10 @@ async function syncContentData(supabase: any, profileId: string, logId: string) 
     let apiCalls = 1;
 
     // Process each media item
-    for (const media of mediaData.data.media) {
+    for (const media of mediaData.data) {
       try {
         // Calculate engagement rate
-        const totalEngagement = (media.like_count || 0) + (media.comments_count || 0) + (media.shares_count || 0);
+        const totalEngagement = (media.like_count || 0) + (media.comment_count || 0) + (media.shares_count || 0);
         const engagementRate = media.reach ? ((totalEngagement / media.reach) * 100) : null;
 
         // Extract hashtags and mentions from caption
@@ -191,20 +197,21 @@ async function syncContentData(supabase: any, profileId: string, logId: string) 
         const contentData = {
           instagram_media_id: media.id,
           tracked_profile_id: profileId,
-          content_type: media.media_type === 'VIDEO' ? 'reel' : 'post',
+          content_type: media.media_type?.toLowerCase() === 'video' ? 'reel' : 
+                       media.media_type?.toLowerCase() === 'carousel_album' ? 'carousel' : 'post',
           post_type: media.media_type,
-          post_date: new Date(media.timestamp).toISOString(),
-          caption: media.caption,
-          thumbnail_url: media.thumbnail_url || media.media_url,
-          content_link: media.permalink,
+          post_date: new Date(media.taken_at_timestamp * 1000).toISOString(),
+          caption: media.caption?.substring(0, 2000) || null,
+          thumbnail_url: media.thumbnail_url || media.display_url || media.media_url,
+          content_link: media.permalink || `https://instagram.com/p/${media.shortcode}`,
           total_likes: media.like_count || 0,
-          total_comments: media.comments_count || 0,
-          total_shares: media.shares_count || 0,
-          total_views: media.play_count || 0,
+          total_comments: media.comment_count || 0,
+          total_shares: 0, // StarAPI doesn't provide share count
+          total_views: media.video_view_count || media.play_count || 0,
           reach: media.reach || 0,
           impressions: media.impressions || 0,
           saves: media.saves || 0,
-          video_plays: media.play_count || 0,
+          video_plays: media.video_view_count || media.play_count || 0,
           engagement_rate: engagementRate,
           hashtags: hashtags,
           mentions: mentions,
@@ -250,7 +257,7 @@ async function syncContentData(supabase: any, profileId: string, logId: string) 
     }
 
     await updateSyncLog(supabase, logId, {
-      records_processed: mediaData.data.media.length,
+      records_processed: mediaData.data.length,
       records_created: created,
       records_updated: updated,
       api_calls_made: apiCalls

@@ -64,7 +64,7 @@ export const instagramService = {
 
     if (error) {
       console.error('Error fetching analytics:', error);
-      return this.getMockAnalyticsSummary();
+      throw error;
     }
 
     if (!content || content.length === 0) {
@@ -209,25 +209,4 @@ export const instagramService = {
     return Object.values(grouped);
   },
 
-  // Keep mock data methods for fallback cases
-  getMockAnalyticsSummary(): AnalyticsSummary {
-    return {
-      totalPosts: 0,
-      totalLikes: 0,
-      totalComments: 0,
-      totalViews: 0,
-      totalShares: 0,
-      avgLikesPerPost: 0,
-      avgCommentsPerPost: 0,
-      topPerformingPost: null,
-    };
-  },
-
-  getMockContentList(): InstagramContent[] {
-    return [];
-  },
-
-  getMockPerformanceData() {
-    return [];
-  }
 };

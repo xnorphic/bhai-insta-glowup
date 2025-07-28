@@ -77,7 +77,14 @@ serve(async (req) => {
       })
     }
 
-    const starApiKey = '55325f396cmsh1812ff7f2016376p1079d8jsn5ef3a673c06c'
+    const starApiKey = Deno.env.get('STARAPI_KEY')
+    if (!starApiKey) {
+      return new Response(JSON.stringify({ error: 'StarAPI key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
     console.log(`Processing ${action} for username: ${username}`)
 
     if (action === 'connect_profile') {
