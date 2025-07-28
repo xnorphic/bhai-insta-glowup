@@ -1,183 +1,198 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Eye, Heart, MessageCircle, Share } from "lucide-react";
-import { instagramService, type AnalyticsFilters } from "@/services/instagramService";
-import { PerformanceChart } from "@/components/analytics/PerformanceChart";
-import { ContentTable } from "@/components/analytics/ContentTable";
-import { AnalyticsFilters as FiltersComponent } from "@/components/analytics/AnalyticsFilters";
-import { DataLoader } from "@/components/instagram/DataLoader";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Alert, AlertDescription } from "./ui/alert";
+import { AlertCircle, TrendingUp, Users, Heart, MessageCircle } from "lucide-react";
+import { instagramService } from "@/services/instagramService";
+import { AnalyticsFilters } from "./analytics/AnalyticsFilters";
+import { ContentTable } from "./analytics/ContentTable";
+import { PerformanceChart } from "./analytics/PerformanceChart";
+import { DataLoader } from "./instagram/DataLoader";
 
 export const InstagramAnalytics = () => {
-  const [filters, setFilters] = useState<AnalyticsFilters>({});
+  const [filters, setFilters] = useState({});
 
-  // Available profiles now include both owned and competitor profiles
-  const availableProfiles = ["naukridotcom", "swiggyindia"];
-
-  const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['analytics-summary', filters],
+  const { data: analyticsSummary, isLoading: isLoadingAnalytics, error: analyticsError } = useQuery({
+    queryKey: ['instagram-analytics-summary', filters],
     queryFn: () => instagramService.getAnalyticsSummary(filters),
   });
 
-  const { data: contentList, isLoading: contentLoading } = useQuery({
-    queryKey: ['content-list', filters],
+  const { data: contentList, isLoading: isLoadingContent } = useQuery({
+    queryKey: ['instagram-content-list', filters],
     queryFn: () => instagramService.getContentList(filters, 20),
   });
 
-  const { data: performanceData, isLoading: performanceLoading } = useQuery({
-    queryKey: ['performance-by-type', filters],
+  const { data: performanceData, isLoading: isLoadingPerformance } = useQuery({
+    queryKey: ['instagram-performance-data', filters],
     queryFn: () => instagramService.getPerformanceByType(filters),
   });
 
-  const statsCards = [
-    {
-      title: "Total Posts",
-      value: summary?.totalPosts?.toString() || "0",
-      change: "+12%",
-      trend: "up" as const,
-      icon: <Eye className="w-5 h-5" />
-    },
-    {
-      title: "Total Likes",
-      value: summary ? (summary.totalLikes >= 1000 ? `${(summary.totalLikes / 1000).toFixed(1)}K` : summary.totalLikes.toString()) : "0",
-      change: "+8.5%",
-      trend: "up" as const,
-      icon: <Heart className="w-5 h-5" />
-    },
-    {
-      title: "Total Comments",
-      value: summary ? (summary.totalComments >= 1000 ? `${(summary.totalComments / 1000).toFixed(1)}K` : summary.totalComments.toString()) : "0",
-      change: "+15.3%",
-      trend: "up" as const,
-      icon: <MessageCircle className="w-5 h-5" />
-    },
-    {
-      title: "Avg. Engagement",
-      value: summary ? `${summary.avgLikesPerPost + summary.avgCommentsPerPost}` : "0",
-      change: "-2.1%",
-      trend: "down" as const,
-      icon: <Share className="w-5 h-5" />
-    }
-  ];
+  // Mock available profiles for filters - this would normally come from a query
+  const availableProfiles = ['your_profile', 'competitor_1'];
+
+  if (analyticsError) {
+    return (
+      <div className="space-y-6">
+        <DataLoader />
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load analytics data. Please ensure you have connected Instagram profiles and try again.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const hasData = analyticsSummary && analyticsSummary.totalPosts > 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center px-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Instagram Analytics</h1>
-      </div>
-
-      {/* Data Loader */}
-      <div className="px-4">
-        <DataLoader />
-      </div>
-
-      {/* Filters */}
-      <div className="px-4">
-        <FiltersComponent 
-          filters={filters}
-          onFiltersChange={setFilters}
+    <div className="space-y-6">
+      <DataLoader />
+      
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-3xl font-bold">Instagram Analytics</h2>
+          <p className="text-muted-foreground">
+            Track and analyze your Instagram performance
+          </p>
+        </div>
+        
+        <AnalyticsFilters 
+          filters={filters} 
+          onFiltersChange={setFilters} 
           availableProfiles={availableProfiles}
         />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
-        {statsCards.map((stat, index) => (
-          <Card key={index} className="p-4 sm:p-6 bg-card border-border shadow-card">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <div className="text-primary">
-                  {stat.icon}
-                </div>
-              </div>
-              <div className={`flex items-center space-x-1 ${
-                stat.trend === "up" ? "text-success" : "text-warning"
-              }`}>
-                {stat.trend === "up" ? (
-                  <TrendingUp className="w-4 h-4" />
-                ) : (
-                  <TrendingDown className="w-4 h-4" />
-                )}
-                <span className="text-sm font-medium">{stat.change}</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xl sm:text-2xl font-bold text-card-foreground">
-                {summaryLoading ? "..." : stat.value}
-              </h3>
-              <p className="text-muted-foreground text-sm">{stat.title}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {!hasData ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              No Data Found
+            </CardTitle>
+            <CardDescription>
+              No Instagram data found. Please connect an Instagram profile and sync your content to view analytics.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsSummary.totalPosts}</div>
+              </CardContent>
+            </Card>
 
-      {/* Performance Chart */}
-      <div className="px-4">
-        <PerformanceChart 
-          data={performanceData || []} 
-          isLoading={performanceLoading} 
-        />
-      </div>
-
-      {/* Top Performing Content Card */}
-      {summary?.topPerformingPost && (
-        <Card className="mx-4 p-4 sm:p-6 bg-card border-border shadow-card">
-          <h3 className="text-lg sm:text-xl font-semibold text-card-foreground mb-4">
-            🏆 Top Performing Content
-          </h3>
-          <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
-            <img 
-              src={summary.topPerformingPost.thumbnail_url} 
-              alt="Top performing content"
-              className="w-full sm:w-20 h-48 sm:h-20 rounded-lg object-cover"
-            />
-            <div className="flex-1 space-y-2">
-              <p className="text-card-foreground font-medium">
-                {summary.topPerformingPost.caption || 'No caption available'}
-              </p>
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span>❤️ {summary.topPerformingPost.total_likes.toLocaleString()}</span>
-                <span>💬 {summary.topPerformingPost.total_comments.toLocaleString()}</span>
-                <span>👁️ {summary.topPerformingPost.total_views.toLocaleString()}</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Profile: @{summary.topPerformingPost.tracked_profile_id}
-              </div>
-              {summary.topPerformingPost.ai_performance_summary && (
-                <p className="text-sm text-muted-foreground mt-2 italic">
-                  AI Insight: {summary.topPerformingPost.ai_performance_summary}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Likes</CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsSummary.totalLikes.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  Avg: {analyticsSummary.avgLikesPerPost} per post
                 </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
 
-      {/* Content Table */}
-      <div className="px-4">
-        <ContentTable 
-          content={contentList || []} 
-          isLoading={contentLoading} 
-        />
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Comments</CardTitle>
+                <MessageCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsSummary.totalComments.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  Avg: {analyticsSummary.avgCommentsPerPost} per post
+                </p>
+              </CardContent>
+            </Card>
 
-      {/* No Data State */}
-      {!summaryLoading && (!summary || summary.totalPosts === 0) && (
-        <Card className="mx-4 p-8 sm:p-12 bg-card border-border shadow-card text-center">
-          <div className="space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <Eye className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-card-foreground">
-              No Instagram Data Found
-            </h3>
-            <p className="text-muted-foreground max-w-md mx-auto text-sm sm:text-base">
-              Use the Data Loader above to fetch Instagram data for analysis. 
-              Your analytics dashboard will populate once data is loaded.
-            </p>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsSummary.totalViews.toLocaleString()}</div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+
+          {/* Performance Chart */}
+          {performanceData && performanceData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance by Content Type</CardTitle>
+                <CardDescription>
+                  Compare engagement across different types of content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PerformanceChart 
+                  data={performanceData} 
+                  isLoading={isLoadingPerformance}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Top Performing Post */}
+          {analyticsSummary.topPerformingPost && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performing Post</CardTitle>
+                <CardDescription>
+                  Your highest engagement post
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src={analyticsSummary.topPerformingPost.thumbnail_url} 
+                    alt="Top post"
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium">
+                      {analyticsSummary.topPerformingPost.caption?.substring(0, 100)}...
+                    </p>
+                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                      <span>{analyticsSummary.topPerformingPost.total_likes} likes</span>
+                      <span>{analyticsSummary.topPerformingPost.total_comments} comments</span>
+                      <span>{analyticsSummary.topPerformingPost.total_views} views</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Content</CardTitle>
+              <CardDescription>
+                Your latest Instagram posts and their performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ContentTable 
+                content={contentList || []} 
+                isLoading={isLoadingContent}
+              />
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );
