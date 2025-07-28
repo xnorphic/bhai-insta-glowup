@@ -84,12 +84,12 @@ Deno.serve(async (req) => {
       const batch = profiles.slice(i, i + batchSize);
       
       const batchPromises = batch.map(async (profile: ProfileConnection) => {
+        let actualSyncType = sync_type;
+        
         try {
           console.log(`Syncing profile: ${profile.username}`);
           
           // Determine sync strategy based on last sync time
-          let actualSyncType = sync_type;
-          
           if (sync_type === 'auto') {
             const lastSync = profile.last_sync_at ? new Date(profile.last_sync_at) : null;
             const now = new Date();

@@ -49,6 +49,13 @@ export const InstagramConnect = () => {
       type: 'owned',
       profilePicture: 'https://via.placeholder.com/48',
       followerCount: 850000
+    },
+    {
+      id: '2',
+      username: 'swiggyindia',
+      type: 'competitor',
+      profilePicture: 'https://via.placeholder.com/48',
+      followerCount: 1200000
     }
   ]);
   const [newUsername, setNewUsername] = useState('');
