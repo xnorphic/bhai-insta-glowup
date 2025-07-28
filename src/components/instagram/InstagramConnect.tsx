@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { CSVExport } from './CSVExport';
+import { SyncManagement } from './SyncManagement';
 
 interface InstagramConnection {
   id: string;
@@ -276,363 +277,340 @@ Thank you!`;
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Instagram Connect</h1>
+          <p className="text-muted-foreground">Connect your Instagram accounts for analytics and competition analysis</p>
+        </div>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="analytics">Analytics Connections</TabsTrigger>
-          <TabsTrigger value="competition">Competition Analysis</TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <Instagram className="h-4 w-4" />
+            Analytics Connections
+          </TabsTrigger>
+          <TabsTrigger value="competition" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Competition Analysis
+          </TabsTrigger>
         </TabsList>
 
-        {/* Analytics Connections Tab */}
-        <TabsContent value="analytics">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Instagram className="w-6 h-6 mr-2 text-pink-500" />
-                  Instagram Analytics Connections
-                </h3>
-                <p className="text-gray-600 mt-1">
-                  Connect your Instagram accounts to start tracking analytics
-                </p>
-              </div>
-            </div>
-
-            {/* Connection Form */}
-            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-              <div className="space-y-4">
-                <div>
+        <TabsContent value="analytics" className="space-y-6">
+          {/* Connect New Instagram Account */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Instagram className="h-5 w-5" />
+                Connect Instagram Account
+              </CardTitle>
+              <CardDescription>
+                Connect your Instagram account to access analytics and insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
                   <Label htmlFor="username">Instagram Username</Label>
                   <Input
                     id="username"
-                    type="text"
-                    placeholder="Enter username (e.g., naukridotcom)"
+                    placeholder="Enter username (without @)"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleConnect()}
-                    disabled={isConnecting}
+                    onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                   />
                 </div>
-                <Button 
-                  onClick={handleConnect}
-                  disabled={isConnecting || !username.trim()}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleConnect} 
+                    disabled={isConnecting || !username.trim()}
+                    className="min-w-[100px]"
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Connect
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Connected Accounts */}
+          {connections && connections.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Connected Accounts ({connections.length})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {connections.map((connection) => (
+                    <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                          {connection.profile_picture_url ? (
+                            <img 
+                              src={connection.profile_picture_url} 
+                              alt={connection.username}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            connection.username.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">@{connection.username}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {connection.follower_count?.toLocaleString()} followers
+                            {connection.is_business_account && (
+                              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                Business
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Connected {new Date(connection.connected_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSync(connection.username)}
+                          disabled={syncContent.isPending}
+                        >
+                          {syncContent.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                          Sync
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* CSV Export */}
+          <CSVExport 
+            connectedProfiles={connections?.map(conn => ({
+              id: conn.username,
+              username: conn.username,
+              displayName: conn.username
+            })) || []} 
+          />
+
+          {/* Sync Management */}
+          <SyncManagement />
+        </TabsContent>
+
+        <TabsContent value="competition" className="space-y-6">
+          {/* Credits Display */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                  Competition Analysis Credits
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-primary">{credits}</span>
+                  <span className="text-sm text-muted-foreground">credits remaining</span>
+                </div>
+              </CardTitle>
+              <CardDescription>
+                Each competitor account connection costs 1 credit. Credits expire after 30 days.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          {/* Competition Accounts Management */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Owned Accounts */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Your Accounts ({ownedAccounts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ownedAccounts.length > 0 ? (
+                  <div className="space-y-3">
+                    {ownedAccounts.map((account) => (
+                      <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={account.profilePicture} 
+                            alt={account.username}
+                            className="w-10 h-10 rounded-full"
+                          />
+                          <div>
+                            <p className="font-medium">@{account.username}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {account.followerCount?.toLocaleString()} followers
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAccount(account.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-6">
+                    No accounts connected yet
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Competitor Accounts */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-red-500" />
+                  Competitor Accounts ({competitorAccounts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {competitorAccounts.length > 0 ? (
+                  <div className="space-y-3">
+                    {competitorAccounts.map((account) => (
+                      <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={account.profilePicture} 
+                            alt={account.username}
+                            className="w-10 h-10 rounded-full"
+                          />
+                          <div>
+                            <p className="font-medium">@{account.username}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {account.followerCount?.toLocaleString()} followers
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAccount(account.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-6">
+                    No competitor accounts added yet
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Add New Competition Account */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Competition Account</CardTitle>
+              <CardDescription>
+                Connect competitor accounts to track their performance. Each connection costs 1 credit.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="competition-username">Instagram Username</Label>
+                  <Input
+                    id="competition-username"
+                    placeholder="competitor_username"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="account-type">Account Type</Label>
+                  <select
+                    id="account-type"
+                    value={accountType}
+                    onChange={(e) => setAccountType(e.target.value as 'owned' | 'competitor')}
+                    className="w-full p-2 border border-input rounded-md"
+                  >
+                    <option value="owned">Your Account</option>
+                    <option value="competitor">Competitor</option>
+                  </select>
+                </div>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Cost: 1 credit • Credits expire in 30 days • {credits} credits remaining
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleConnectCompetitionAccount}
+                  disabled={
+                    isConnectingCompetition || 
+                    !newUsername.trim() || 
+                    credits < 1 || 
+                    connectedAccounts.length >= maxAccounts
+                  }
+                  className="flex-1"
                 >
-                  {isConnecting ? (
+                  {isConnectingCompetition ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       Connecting...
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Connect Profile
+                      <Plus className="h-4 w-4 mr-2" />
+                      Connect Account (1 credit)
                     </>
                   )}
                 </Button>
-              </div>
-            </div>
-
-            {connectInstagram.error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {connectInstagram.error.message}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {connections && connections.length > 0 ? (
-              <div className="space-y-4">
-                {connections.map((connection) => (
-                  <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={connection.profile_picture_url || 'https://via.placeholder.com/48'}
-                        alt={`@${connection.username}`}
-                        className="w-12 h-12 rounded-full"
-                      />
-                      <div>
-                        <h4 className="font-medium text-gray-900">@{connection.username}</h4>
-                        <div className="flex items-center text-sm text-gray-600 space-x-4">
-                          <span>{connection.follower_count?.toLocaleString() || 0} followers</span>
-                          {connection.is_business_account && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                              Business
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSync(connection.username)}
-                        disabled={syncContent.isPending}
-                      >
-                        {syncContent.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-4 h-4" />
-                        )}
-                        <span className="ml-1">Sync</span>
-                      </Button>
-                      <div className="flex items-center text-green-600">
-                        <CheckCircle className="w-5 h-5 mr-1" />
-                        <span className="text-sm font-medium">Connected</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Instagram className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">No accounts connected</h4>
-                <p className="text-gray-600 mb-6">
-                  Enter an Instagram username above to start analyzing content performance
-                </p>
-              </div>
-            )}
-
-            {connections && connections.length > 0 && (
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  🎉 Great! Your Instagram account is connected. You can now view your analytics dashboard with real data.
-                  Use the "Sync" button to update your content data.
-                </AlertDescription>
-              </Alert>
-            )}
-          </Card>
-        </TabsContent>
-
-        {/* Competition Analysis Tab */}
-        <TabsContent value="competition">
-          <div className="space-y-6">
-            {/* Credits and Overview */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <Target className="w-6 h-6 mr-2 text-red-500" />
-                    Competition Analysis - Connect Accounts
-                  </h3>
-                  <p className="text-gray-600 mt-1">
-                    Connect your own account and competitor accounts for detailed analysis
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="w-5 h-5 text-blue-500" />
-                    <span className="text-lg font-semibold">{credits} Credits</span>
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    {connectedAccounts.length}/{maxAccounts} accounts connected
-                  </p>
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={handlePurchaseCredits}
+                  disabled={credits >= 10}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Buy Credits
+                </Button>
               </div>
 
-              {credits === 0 && (
-                <Alert className="mb-4">
+              {credits < 1 && (
+                <Alert>
                   <Mail className="h-4 w-4" />
                   <AlertDescription>
-                    You're out of credits! Each account requires 1 credit (${creditCost} USD).{' '}
-                    <Button variant="link" className="p-0 h-auto" onClick={handlePurchaseCredits}>
-                      Click here to purchase more credits
-                    </Button>
+                    You're out of credits! Click "Buy Credits" to purchase more via email.
                   </AlertDescription>
                 </Alert>
               )}
-            </Card>
-
-            {/* Connect New Account */}
-            <Card className="p-6">
-              <h4 className="text-lg font-semibold mb-4">Connect New Account</h4>
-              
-              <div className="space-y-4">
-                <div className="flex space-x-4">
-                  <Button
-                    variant={accountType === 'owned' ? 'default' : 'outline'}
-                    onClick={() => setAccountType('owned')}
-                    className="flex items-center space-x-2"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>Own Account</span>
-                  </Button>
-                  <Button
-                    variant={accountType === 'competitor' ? 'default' : 'outline'}
-                    onClick={() => setAccountType('competitor')}
-                    className="flex items-center space-x-2"
-                  >
-                    <Target className="w-4 h-4" />
-                    <span>Competitor</span>
-                  </Button>
-                </div>
-
-                <div className="flex space-x-4">
-                  <div className="flex-1">
-                    <Label htmlFor="competition-username">Instagram Username</Label>
-                    <Input
-                      id="competition-username"
-                      type="text"
-                      placeholder="Enter username (e.g., swiggyindia)"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleConnectCompetitionAccount()}
-                      disabled={isConnectingCompetition || connectedAccounts.length >= maxAccounts}
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          disabled={isConnectingCompetition || connectedAccounts.length >= maxAccounts || credits < 1}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          {isConnectingCompetition ? (
-                            <>Connecting...</>
-                          ) : (
-                            <>
-                              <Plus className="w-4 h-4 mr-2" />
-                              Connect (1 Credit)
-                            </>
-                          )}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Confirm Account Connection</DialogTitle>
-                          <DialogDescription>
-                            You're about to connect <strong>@{newUsername}</strong> as a{' '}
-                            <strong>{accountType === 'owned' ? 'owned' : 'competitor'}</strong> account.
-                            <br /><br />
-                            This will cost <strong>1 credit (${creditCost} USD)</strong>. 
-                            You currently have <strong>{credits} credits</strong> left.
-                            <br /><br />
-                            <em>Note: Credits are not refunded when accounts are removed.</em>
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" onClick={() => setNewUsername('')}>Cancel</Button>
-                          <Button onClick={handleConnectCompetitionAccount}>
-                            Confirm Connection
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Owned Accounts Section */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold flex items-center">
-                  <Crown className="w-5 h-5 mr-2 text-yellow-500" />
-                  Your Accounts ({ownedAccounts.length})
-                </h4>
-              </div>
-              
-              {ownedAccounts.length > 0 ? (
-                <div className="space-y-3">
-                  {ownedAccounts.map((account) => (
-                    <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={account.profilePicture}
-                          alt={`@${account.username}`}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                          <h5 className="font-medium">@{account.username}</h5>
-                          <p className="text-sm text-gray-600">
-                            {account.followerCount?.toLocaleString()} followers
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRemoveAccount(account.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">No owned accounts connected</p>
-              )}
-            </Card>
-
-            {/* Competitor Accounts Section */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-red-500" />
-                  Competitor Accounts ({competitorAccounts.length})
-                </h4>
-              </div>
-              
-              {competitorAccounts.length > 0 ? (
-                <div className="space-y-3">
-                  {competitorAccounts.map((account) => (
-                    <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg bg-orange-50">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={account.profilePicture}
-                          alt={`@${account.username}`}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                          <h5 className="font-medium">@{account.username}</h5>
-                          <p className="text-sm text-gray-600">
-                            {account.followerCount?.toLocaleString()} followers
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRemoveAccount(account.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">No competitor accounts connected</p>
-              )}
-            </Card>
-
-            {/* Purchase Credits */}
-            {credits < 3 && (
-              <Card className="p-6 border-blue-200 bg-blue-50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-lg font-semibold text-blue-900">Need More Credits?</h4>
-                    <p className="text-blue-700 mt-1">
-                      Each credit costs ${creditCost} USD and allows you to connect one account.
-                      <br />
-                      Credits are not refunded when accounts are removed.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={handlePurchaseCredits}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Purchase Credits
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -602,6 +602,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      trigger_manual_sync: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       user_has_instagram_profile: {
         Args: { profile_id: string }
         Returns: boolean
