@@ -281,193 +281,249 @@ export type Database = {
         }
         Relationships: []
       }
-      instagram_connections: {
+      instagram_media: {
         Row: {
-          access_token: string
+          caption: string | null
+          children_media: Json | null
+          comment_count: number | null
+          created_at: string
+          engagement_rate: number | null
+          hashtags: string[] | null
+          id: string
+          insights: Json | null
+          is_story_available: boolean | null
+          last_updated: string
+          like_count: number | null
+          location_id: string | null
+          location_name: string | null
+          media_id: string
+          media_type: string
+          media_url: string
+          mentions: string[] | null
+          permalink: string
+          profile_id: string
+          save_count: number | null
+          share_count: number | null
+          thumbnail_url: string | null
+          timestamp: string
+          video_duration: number | null
+          view_count: number | null
+        }
+        Insert: {
+          caption?: string | null
+          children_media?: Json | null
+          comment_count?: number | null
+          created_at?: string
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          insights?: Json | null
+          is_story_available?: boolean | null
+          last_updated?: string
+          like_count?: number | null
+          location_id?: string | null
+          location_name?: string | null
+          media_id: string
+          media_type: string
+          media_url: string
+          mentions?: string[] | null
+          permalink: string
+          profile_id: string
+          save_count?: number | null
+          share_count?: number | null
+          thumbnail_url?: string | null
+          timestamp: string
+          video_duration?: number | null
+          view_count?: number | null
+        }
+        Update: {
+          caption?: string | null
+          children_media?: Json | null
+          comment_count?: number | null
+          created_at?: string
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          insights?: Json | null
+          is_story_available?: boolean | null
+          last_updated?: string
+          like_count?: number | null
+          location_id?: string | null
+          location_name?: string | null
+          media_id?: string
+          media_type?: string
+          media_url?: string
+          mentions?: string[] | null
+          permalink?: string
+          profile_id?: string
+          save_count?: number | null
+          share_count?: number | null
+          thumbnail_url?: string | null
+          timestamp?: string
+          video_duration?: number | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_media_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      instagram_profiles: {
+        Row: {
           account_type: string | null
           api_calls_reset_date: string | null
           api_calls_today: number | null
+          biography: string | null
+          category: string | null
           connected_at: string
           created_at: string
+          external_url: string | null
           follower_count: number | null
           following_count: number | null
+          full_name: string | null
           id: string
-          instagram_user_id: string
           is_active: boolean | null
           is_business_account: boolean | null
+          is_verified: boolean | null
           last_sync_at: string | null
           media_count: number | null
+          profile_id: string
           profile_picture_url: string | null
-          refresh_token: string | null
-          token_expires_at: string | null
           total_api_calls: number | null
           user_id: string
           username: string
         }
         Insert: {
-          access_token: string
           account_type?: string | null
           api_calls_reset_date?: string | null
           api_calls_today?: number | null
+          biography?: string | null
+          category?: string | null
           connected_at?: string
           created_at?: string
+          external_url?: string | null
           follower_count?: number | null
           following_count?: number | null
+          full_name?: string | null
           id?: string
-          instagram_user_id: string
           is_active?: boolean | null
           is_business_account?: boolean | null
+          is_verified?: boolean | null
           last_sync_at?: string | null
           media_count?: number | null
+          profile_id: string
           profile_picture_url?: string | null
-          refresh_token?: string | null
-          token_expires_at?: string | null
           total_api_calls?: number | null
           user_id: string
           username: string
         }
         Update: {
-          access_token?: string
           account_type?: string | null
           api_calls_reset_date?: string | null
           api_calls_today?: number | null
+          biography?: string | null
+          category?: string | null
           connected_at?: string
           created_at?: string
+          external_url?: string | null
           follower_count?: number | null
           following_count?: number | null
+          full_name?: string | null
           id?: string
-          instagram_user_id?: string
           is_active?: boolean | null
           is_business_account?: boolean | null
+          is_verified?: boolean | null
           last_sync_at?: string | null
           media_count?: number | null
+          profile_id?: string
           profile_picture_url?: string | null
-          refresh_token?: string | null
-          token_expires_at?: string | null
           total_api_calls?: number | null
           user_id?: string
           username?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "instagram_connections_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      instagram_content: {
+      instagram_stories: {
         Row: {
-          ai_performance_summary: string | null
-          ai_sentiment_summary: string | null
-          alt_text: string | null
-          audio_used: string | null
-          caption: string | null
-          content_duration: number | null
-          content_link: string
-          content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
-          engagement_rate: number | null
+          expires_at: string
           hashtags: string[] | null
+          highlight_id: string | null
           id: string
-          impressions: number | null
-          instagram_media_id: string
-          is_boosted: boolean
-          last_refreshed_at: string
-          location_id: number | null
+          is_archived: boolean | null
+          last_updated: string
+          location_id: string | null
           location_name: string | null
+          media_type: string
+          media_url: string
           mentions: string[] | null
-          performance_category:
-            | Database["public"]["Enums"]["performance_category"]
-            | null
-          post_date: string
-          post_type: string | null
-          reach: number | null
-          saves: number | null
-          sync_status: string | null
-          thumbnail_url: string
-          total_comments: number
-          total_likes: number
-          total_shares: number
-          total_views: number
-          tracked_profile_id: string
-          video_plays: number | null
+          profile_id: string
+          reply_count: number | null
+          stickers: Json | null
+          story_id: string
+          story_type: string | null
+          thumbnail_url: string | null
+          timestamp: string
+          view_count: number | null
         }
         Insert: {
-          ai_performance_summary?: string | null
-          ai_sentiment_summary?: string | null
-          alt_text?: string | null
-          audio_used?: string | null
-          caption?: string | null
-          content_duration?: number | null
-          content_link: string
-          content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string
-          engagement_rate?: number | null
+          expires_at: string
           hashtags?: string[] | null
+          highlight_id?: string | null
           id?: string
-          impressions?: number | null
-          instagram_media_id: string
-          is_boosted?: boolean
-          last_refreshed_at: string
-          location_id?: number | null
+          is_archived?: boolean | null
+          last_updated?: string
+          location_id?: string | null
           location_name?: string | null
+          media_type: string
+          media_url: string
           mentions?: string[] | null
-          performance_category?:
-            | Database["public"]["Enums"]["performance_category"]
-            | null
-          post_date: string
-          post_type?: string | null
-          reach?: number | null
-          saves?: number | null
-          sync_status?: string | null
-          thumbnail_url: string
-          total_comments?: number
-          total_likes?: number
-          total_shares?: number
-          total_views?: number
-          tracked_profile_id: string
-          video_plays?: number | null
+          profile_id: string
+          reply_count?: number | null
+          stickers?: Json | null
+          story_id: string
+          story_type?: string | null
+          thumbnail_url?: string | null
+          timestamp: string
+          view_count?: number | null
         }
         Update: {
-          ai_performance_summary?: string | null
-          ai_sentiment_summary?: string | null
-          alt_text?: string | null
-          audio_used?: string | null
-          caption?: string | null
-          content_duration?: number | null
-          content_link?: string
-          content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
-          engagement_rate?: number | null
+          expires_at?: string
           hashtags?: string[] | null
+          highlight_id?: string | null
           id?: string
-          impressions?: number | null
-          instagram_media_id?: string
-          is_boosted?: boolean
-          last_refreshed_at?: string
-          location_id?: number | null
+          is_archived?: boolean | null
+          last_updated?: string
+          location_id?: string | null
           location_name?: string | null
+          media_type?: string
+          media_url?: string
           mentions?: string[] | null
-          performance_category?:
-            | Database["public"]["Enums"]["performance_category"]
-            | null
-          post_date?: string
-          post_type?: string | null
-          reach?: number | null
-          saves?: number | null
-          sync_status?: string | null
-          thumbnail_url?: string
-          total_comments?: number
-          total_likes?: number
-          total_shares?: number
-          total_views?: number
-          tracked_profile_id?: string
-          video_plays?: number | null
+          profile_id?: string
+          reply_count?: number | null
+          stickers?: Json | null
+          story_id?: string
+          story_type?: string | null
+          thumbnail_url?: string | null
+          timestamp?: string
+          view_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_stories_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
       }
       instagram_sync_logs: {
         Row: {
@@ -482,6 +538,7 @@ export type Database = {
           records_updated: number | null
           started_at: string
           status: string
+          sync_details: Json | null
           sync_type: string
         }
         Insert: {
@@ -496,6 +553,7 @@ export type Database = {
           records_updated?: number | null
           started_at?: string
           status?: string
+          sync_details?: Json | null
           sync_type: string
         }
         Update: {
@@ -510,6 +568,7 @@ export type Database = {
           records_updated?: number | null
           started_at?: string
           status?: string
+          sync_details?: Json | null
           sync_type?: string
         }
         Relationships: []
@@ -591,7 +650,7 @@ export type Database = {
     }
     Functions: {
       increment_api_calls: {
-        Args: { profile_username: string }
+        Args: { target_profile_id: string }
         Returns: undefined
       }
       is_admin: {

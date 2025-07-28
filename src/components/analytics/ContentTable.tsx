@@ -1,14 +1,13 @@
-
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Heart, MessageCircle, Eye, Share } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
-type InstagramContent = Database['public']['Tables']['instagram_content']['Row'];
+type InstagramMedia = Database['public']['Tables']['instagram_media']['Row'];
 
 interface ContentTableProps {
-  content: InstagramContent[];
+  content: InstagramMedia[];
   isLoading: boolean;
 }
 
@@ -27,13 +26,18 @@ export const ContentTable = ({ content, isLoading }: ContentTableProps) => {
     });
   };
 
-  const getPerformanceBadgeColor = (category: string | null) => {
-    switch (category) {
-      case 'Green': return 'bg-green-100 text-green-800';
-      case 'Amber': return 'bg-yellow-100 text-yellow-800';
-      case 'Red': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getPerformanceBadgeColor = (engagementRate: number | null) => {
+    if (!engagementRate) return 'bg-gray-100 text-gray-800';
+    if (engagementRate > 5) return 'bg-green-100 text-green-800';
+    if (engagementRate > 2) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getPerformanceLabel = (engagementRate: number | null) => {
+    if (!engagementRate) return 'Unknown';
+    if (engagementRate > 5) return 'High';
+    if (engagementRate > 2) return 'Medium';
+    return 'Low';
   };
 
   if (isLoading) {
@@ -93,7 +97,7 @@ export const ContentTable = ({ content, isLoading }: ContentTableProps) => {
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <img 
-                      src={item.thumbnail_url} 
+                      src={item.thumbnail_url || item.media_url} 
                       alt="Content thumbnail"
                       className="w-12 h-12 rounded-lg object-cover"
                     />
@@ -101,44 +105,37 @@ export const ContentTable = ({ content, isLoading }: ContentTableProps) => {
                       <p className="text-sm font-medium text-[#333333] truncate">
                         {item.caption || 'No caption'}
                       </p>
-                      {item.ai_sentiment_summary && (
-                        <p className="text-xs text-[#666666] truncate">
-                          {item.ai_sentiment_summary}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="capitalize">
-                    {item.content_type}
+                    {item.media_type}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-[#666666]">
-                  {formatDate(item.post_date)}
+                  {formatDate(item.timestamp)}
                 </TableCell>
                 <TableCell>
-                  {item.performance_category && (
-                    <Badge className={getPerformanceBadgeColor(item.performance_category)}>
-                      {item.performance_category}
-                    </Badge>
-                  )}
+                  <Badge className={getPerformanceBadgeColor(item.engagement_rate)}>
+                    {getPerformanceLabel(item.engagement_rate)}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-center">
-                  {formatNumber(item.total_likes)}
+                  {formatNumber(item.like_count)}
                 </TableCell>
                 <TableCell className="text-center">
-                  {formatNumber(item.total_comments)}
+                  {formatNumber(item.comment_count)}
                 </TableCell>
                 <TableCell className="text-center">
-                  {formatNumber(item.total_views)}
+                  {formatNumber(item.view_count)}
                 </TableCell>
                 <TableCell className="text-center">
-                  {formatNumber(item.total_shares)}
+                  {formatNumber(item.share_count)}
                 </TableCell>
                 <TableCell>
                   <a 
-                    href={item.content_link} 
+                    href={item.permalink} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-[hsl(240,50%,40%)] hover:text-[hsl(240,70%,30%)]"

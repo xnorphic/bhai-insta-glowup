@@ -167,9 +167,9 @@ export const InstagramAnalytics = () => {
                       {analyticsSummary.topPerformingPost.caption?.substring(0, 100)}...
                     </p>
                     <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>{analyticsSummary.topPerformingPost.total_likes} likes</span>
-                      <span>{analyticsSummary.topPerformingPost.total_comments} comments</span>
-                      <span>{analyticsSummary.topPerformingPost.total_views} views</span>
+                      <span>{analyticsSummary.topPerformingPost.like_count} likes</span>
+                      <span>{analyticsSummary.topPerformingPost.comment_count} comments</span>
+                      <span>{analyticsSummary.topPerformingPost.view_count} views</span>
                     </div>
                   </div>
                 </div>

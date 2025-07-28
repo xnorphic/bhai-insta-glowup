@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface InstagramProfile {
@@ -12,11 +11,12 @@ export const instagramDataLoader = {
     console.log(`Loading data for ${username}...`);
     
     try {
-      // Call the existing edge function to sync content
-      const { data, error } = await supabase.functions.invoke('instagram-starapi', {
+      // Call the enhanced sync function to sync content
+      const { data, error } = await supabase.functions.invoke('instagram-enhanced-sync', {
         body: {
-          action: 'sync_content',
-          username: username
+          action: 'sync_full',
+          profile_id: username,
+          sync_type: 'full'
         }
       });
 
@@ -25,7 +25,7 @@ export const instagramDataLoader = {
         throw error;
       }
 
-      console.log(`Successfully synced ${data.synced_posts || 0} posts for ${username}`);
+      console.log(`Successfully synced content for ${username}`);
       return data;
     } catch (error) {
       console.error(`Failed to load data for ${username}:`, error);
@@ -64,14 +64,14 @@ export const instagramDataLoader = {
 
   async getContentForDateRange(startDate: string, endDate: string, profileIds?: string[]) {
     let query = supabase
-      .from('instagram_content')
+      .from('instagram_media')
       .select('*')
-      .gte('post_date', startDate)
-      .lte('post_date', endDate)
-      .order('post_date', { ascending: false });
+      .gte('timestamp', startDate)
+      .lte('timestamp', endDate)
+      .order('timestamp', { ascending: false });
 
     if (profileIds && profileIds.length > 0) {
-      query = query.in('tracked_profile_id', profileIds);
+      query = query.in('profile_id', profileIds);
     }
 
     const { data, error } = await query;

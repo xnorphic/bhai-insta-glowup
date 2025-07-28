@@ -14,16 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import { CSVExport } from './CSVExport';
 import { SyncManagement } from './SyncManagement';
 import { triggerManualSync } from '@/utils/manualSync';
+import type { Database } from "@/integrations/supabase/types";
 
-interface InstagramConnection {
-  id: string;
-  username: string;
-  profile_picture_url: string | null;
-  follower_count: number | null;
-  is_business_account: boolean | null;
-  connected_at: string;
-  is_active: boolean;
-}
+type InstagramProfile = Database['public']['Tables']['instagram_profiles']['Row'];
 
 interface ConnectedAccount {
   id: string;
@@ -66,26 +59,26 @@ export const InstagramConnect = () => {
   const maxAccounts = 3;
   const creditCost = 90;
 
-  // Fetch user's Instagram connections
+  // Fetch user's Instagram profiles
   const { data: connections, isLoading } = useQuery({
-    queryKey: ['instagram-connections'],
+    queryKey: ['instagram-profiles'],
     queryFn: async () => {
       if (!user) return [];
       
       const { data, error } = await supabase
-        .from('instagram_connections')
+        .from('instagram_profiles')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .order('connected_at', { ascending: false });
 
       if (error) throw error;
-      return data as InstagramConnection[];
+      return data as InstagramProfile[];
     },
     enabled: !!user,
   });
 
-  // Connect Instagram profile using StarAPI
+  // Connect Instagram profile using enhanced sync
   const connectInstagram = useMutation({
     mutationFn: async (instagramUsername: string) => {
       if (!user || !instagramUsername.trim()) {
@@ -94,10 +87,11 @@ export const InstagramConnect = () => {
       
       console.log('Connecting to Instagram profile:', instagramUsername);
 
-      const { data, error } = await supabase.functions.invoke('instagram-starapi', {
+      const { data, error } = await supabase.functions.invoke('instagram-enhanced-sync', {
         body: { 
-          action: 'connect_profile', 
-          username: instagramUsername.trim().replace('@', '') 
+          action: 'sync_profile', 
+          profile_id: instagramUsername.trim().replace('@', ''),
+          sync_type: 'profile' 
         }
       });
 
@@ -107,12 +101,12 @@ export const InstagramConnect = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['instagram-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['instagram-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
       queryClient.invalidateQueries({ queryKey: ['content-list'] });
       toast({
         title: "Profile Connected!",
-        description: `Successfully connected @${data.connection.username}`,
+        description: `Successfully connected ${data.profile_id}`,
       });
       setUsername('');
     },
@@ -128,11 +122,12 @@ export const InstagramConnect = () => {
 
   // Sync content for a connected profile
   const syncContent = useMutation({
-    mutationFn: async (profileUsername: string) => {
-      const { data, error } = await supabase.functions.invoke('instagram-starapi', {
+    mutationFn: async (profileId: string) => {
+      const { data, error } = await supabase.functions.invoke('instagram-enhanced-sync', {
         body: { 
-          action: 'sync_content', 
-          username: profileUsername 
+          action: 'sync_full', 
+          profile_id: profileId,
+          sync_type: 'full'
         }
       });
 
@@ -141,13 +136,13 @@ export const InstagramConnect = () => {
 
       return data;
     },
-    onSuccess: (data, profileUsername) => {
+    onSuccess: (data, profileId) => {
       queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
       queryClient.invalidateQueries({ queryKey: ['content-list'] });
       queryClient.invalidateQueries({ queryKey: ['performance-by-type'] });
       toast({
         title: "Content Synced!",
-        description: `Synced ${data.synced_posts} posts from @${profileUsername}`,
+        description: `Successfully synced content for ${profileId}`,
       });
     },
     onError: (error: any) => {
@@ -177,8 +172,8 @@ export const InstagramConnect = () => {
     }
   };
 
-  const handleSync = async (profileUsername: string) => {
-    await syncContent.mutateAsync(profileUsername);
+  const handleSync = async (profileId: string) => {
+    await syncContent.mutateAsync(profileId);
   };
 
   // Competition Analysis Functions
@@ -282,7 +277,6 @@ Thank you!`;
       </Card>
     );
   }
-
 
   return (
     <div className="space-y-6">
@@ -395,7 +389,7 @@ Thank you!`;
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleSync(connection.username)}
+                          onClick={() => handleSync(connection.profile_id)}
                           disabled={syncContent.isPending}
                         >
                           {syncContent.isPending ? (
@@ -416,9 +410,9 @@ Thank you!`;
           {/* CSV Export */}
           <CSVExport 
             connectedProfiles={connections?.map(conn => ({
-              id: conn.username,
+              id: conn.profile_id,
               username: conn.username,
-              displayName: conn.username
+              displayName: conn.full_name || conn.username
             })) || []} 
           />
 
@@ -479,14 +473,14 @@ Thank you!`;
                           size="sm"
                           onClick={() => handleRemoveAccount(account.id)}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-6">
-                    No accounts connected yet
+                  <p className="text-center text-muted-foreground py-4">
+                    No owned accounts connected yet
                   </p>
                 )}
               </CardContent>
@@ -523,13 +517,13 @@ Thank you!`;
                           size="sm"
                           onClick={() => handleRemoveAccount(account.id)}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-6">
+                  <p className="text-center text-muted-foreground py-4">
                     No competitor accounts added yet
                   </p>
                 )}
@@ -540,84 +534,75 @@ Thank you!`;
           {/* Add New Competition Account */}
           <Card>
             <CardHeader>
-              <CardTitle>Add Competition Account</CardTitle>
+              <CardTitle>Add New Account</CardTitle>
               <CardDescription>
-                Connect competitor accounts to track their performance. Each connection costs 1 credit.
+                Connect an owned account (free) or track a competitor (1 credit)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="competition-username">Instagram Username</Label>
+                  <Label htmlFor="newUsername">Instagram Username</Label>
                   <Input
-                    id="competition-username"
-                    placeholder="competitor_username"
+                    id="newUsername"
+                    placeholder="Enter username (without @)"
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="account-type">Account Type</Label>
+                  <Label htmlFor="accountType">Account Type</Label>
                   <select
-                    id="account-type"
+                    id="accountType"
                     value={accountType}
                     onChange={(e) => setAccountType(e.target.value as 'owned' | 'competitor')}
-                    className="w-full p-2 border border-input rounded-md"
+                    className="w-full p-2 border rounded-md"
                   >
-                    <option value="owned">Your Account</option>
-                    <option value="competitor">Competitor</option>
+                    <option value="owned">Your Account (Free)</option>
+                    <option value="competitor">Competitor (1 Credit)</option>
                   </select>
                 </div>
               </div>
 
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Cost: 1 credit • Credits expire in 30 days • {credits} credits remaining
-                </AlertDescription>
-              </Alert>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleConnectCompetitionAccount}
-                  disabled={
-                    isConnectingCompetition || 
-                    !newUsername.trim() || 
-                    credits < 1 || 
-                    connectedAccounts.length >= maxAccounts
-                  }
-                  className="flex-1"
-                >
-                  {isConnectingCompetition ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Connecting...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Connect Account (1 credit)
-                    </>
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  Cost: {accountType === 'competitor' ? '1 credit' : 'Free'}
+                  {accountType === 'competitor' && credits < 1 && (
+                    <span className="text-red-500 ml-2">Insufficient credits</span>
                   )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handlePurchaseCredits}
-                  disabled={credits >= 10}
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Buy Credits
-                </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handlePurchaseCredits}
+                    className="flex items-center gap-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Purchase Credits
+                  </Button>
+                  <Button
+                    onClick={handleConnectCompetitionAccount}
+                    disabled={
+                      isConnectingCompetition || 
+                      !newUsername.trim() || 
+                      (accountType === 'competitor' && credits < 1) ||
+                      connectedAccounts.length >= maxAccounts
+                    }
+                  >
+                    {isConnectingCompetition ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Account
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-
-              {credits < 1 && (
-                <Alert>
-                  <Mail className="h-4 w-4" />
-                  <AlertDescription>
-                    You're out of credits! Click "Buy Credits" to purchase more via email.
-                  </AlertDescription>
-                </Alert>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
