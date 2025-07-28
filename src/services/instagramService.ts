@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type InstagramMedia = Database['public']['Tables']['instagram_media']['Row'];
+type InstagramStory = Database['public']['Tables']['instagram_stories']['Row'];
 
 export interface AnalyticsFilters {
   profileId?: string;
@@ -19,6 +20,7 @@ export interface AnalyticsSummary {
   totalComments: number;
   totalViews: number;
   totalShares: number;
+  totalStories: number;
   avgLikesPerPost: number;
   avgCommentsPerPost: number;
   topPerformingPost: InstagramMedia | null;
@@ -35,39 +37,66 @@ const calculatePerformanceCategory = (engagement: number, totalPosts: number): s
 
 export const instagramService = {
   async getAnalyticsSummary(filters: AnalyticsFilters = {}): Promise<AnalyticsSummary> {
-    let query = supabase
+    // Fetch media data
+    let mediaQuery = supabase
       .from('instagram_media')
       .select('*');
 
-    // Apply filters
     if (filters.profileId) {
-      query = query.eq('profile_id', filters.profileId);
+      mediaQuery = mediaQuery.eq('profile_id', filters.profileId);
     }
 
     if (filters.dateRange) {
-      query = query
+      mediaQuery = mediaQuery
         .gte('timestamp', filters.dateRange.start)
         .lte('timestamp', filters.dateRange.end);
     }
 
     if (filters.contentType) {
-      query = query.eq('media_type', filters.contentType);
+      mediaQuery = mediaQuery.eq('media_type', filters.contentType);
     }
 
-    const { data: content, error } = await query;
+    // Fetch stories data
+    let storiesQuery = supabase
+      .from('instagram_stories')
+      .select('*');
 
-    if (error) {
-      console.error('Error fetching analytics:', error);
-      throw error;
+    if (filters.profileId) {
+      storiesQuery = storiesQuery.eq('profile_id', filters.profileId);
     }
 
-    if (!content || content.length === 0) {
+    if (filters.dateRange) {
+      storiesQuery = storiesQuery
+        .gte('timestamp', filters.dateRange.start)
+        .lte('timestamp', filters.dateRange.end);
+    }
+
+    const [mediaResult, storiesResult] = await Promise.all([
+      mediaQuery,
+      storiesQuery
+    ]);
+
+    if (mediaResult.error) {
+      console.error('Error fetching media analytics:', mediaResult.error);
+      throw mediaResult.error;
+    }
+
+    if (storiesResult.error) {
+      console.error('Error fetching stories analytics:', storiesResult.error);
+      throw storiesResult.error;
+    }
+
+    const content = mediaResult.data || [];
+    const stories = storiesResult.data || [];
+
+    if (content.length === 0 && stories.length === 0) {
       return {
         totalPosts: 0,
         totalLikes: 0,
         totalComments: 0,
         totalViews: 0,
         totalShares: 0,
+        totalStories: 0,
         avgLikesPerPost: 0,
         avgCommentsPerPost: 0,
         topPerformingPost: null,
@@ -76,14 +105,15 @@ export const instagramService = {
 
     const totalLikes = content.reduce((sum, post) => sum + post.like_count, 0);
     const totalComments = content.reduce((sum, post) => sum + post.comment_count, 0);
-    const totalViews = content.reduce((sum, post) => sum + post.view_count, 0);
+    const totalViews = content.reduce((sum, post) => sum + post.view_count, 0) + 
+                       stories.reduce((sum, story) => sum + story.view_count, 0);
     const totalShares = content.reduce((sum, post) => sum + post.share_count, 0);
 
-    const topPerformingPost = content.reduce((best, current) => {
+    const topPerformingPost = content.length > 0 ? content.reduce((best, current) => {
       const currentEngagement = current.like_count + current.comment_count + current.share_count;
       const bestEngagement = best ? best.like_count + best.comment_count + best.share_count : 0;
       return currentEngagement > bestEngagement ? current : best;
-    }, content[0]);
+    }, content[0]) : null;
 
     return {
       totalPosts: content.length,
@@ -91,8 +121,9 @@ export const instagramService = {
       totalComments,
       totalViews,
       totalShares,
-      avgLikesPerPost: Math.round(totalLikes / content.length),
-      avgCommentsPerPost: Math.round(totalComments / content.length),
+      totalStories: stories.length,
+      avgLikesPerPost: content.length > 0 ? Math.round(totalLikes / content.length) : 0,
+      avgCommentsPerPost: content.length > 0 ? Math.round(totalComments / content.length) : 0,
       topPerformingPost,
     };
   },
@@ -123,6 +154,34 @@ export const instagramService = {
 
     if (error) {
       console.error('Error fetching content list:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async getStoriesList(filters: AnalyticsFilters = {}, limit = 20): Promise<InstagramStory[]> {
+    let query = supabase
+      .from('instagram_stories')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    // Apply filters
+    if (filters.profileId) {
+      query = query.eq('profile_id', filters.profileId);
+    }
+
+    if (filters.dateRange) {
+      query = query
+        .gte('timestamp', filters.dateRange.start)
+        .lte('timestamp', filters.dateRange.end);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching stories list:', error);
       return [];
     }
 
