@@ -20,6 +20,15 @@ enable_email_confirmations = true
 [functions.instagram-starapi]
 verify_jwt = true
 
+[functions.instagram-data-sync]
+verify_jwt = false
+
+[functions.instagram-csv-export]
+verify_jwt = true
+
+[functions.instagram-cron-sync]
+verify_jwt = false
+
 [functions.generate-brandbook]
 verify_jwt = true
 
