@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { CSVExport } from './CSVExport';
 import { SyncManagement } from './SyncManagement';
+import { triggerManualSync } from '@/utils/manualSync';
 
 interface InstagramConnection {
   id: string;
@@ -281,6 +282,23 @@ Thank you!`;
       </Card>
     );
   }
+
+  // Trigger initial sync on component mount
+  useEffect(() => {
+    const performInitialSync = async () => {
+      try {
+        await triggerManualSync();
+        toast({
+          title: "Sync Started",
+          description: "Instagram data sync has been initiated",
+        });
+      } catch (error) {
+        console.error('Failed to trigger initial sync:', error);
+      }
+    };
+
+    performInitialSync();
+  }, [toast]);
 
   return (
     <div className="space-y-6">
