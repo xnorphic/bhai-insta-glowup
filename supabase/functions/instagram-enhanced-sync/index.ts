@@ -85,12 +85,14 @@ async function fetchFromStarAPI(endpoint: string, profileId: string): Promise<an
     throw new Error('STARAPI_KEY environment variable is not set');
   }
 
-  const url = `https://api.starapi.co/api/v1/${endpoint}`;
+  // Use RapidAPI endpoint to match instagram-starapi function
+  const url = `https://starapi1.p.rapidapi.com/${endpoint}`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
+      'X-RapidAPI-Key': starApiKey,
+      'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
       'Content-Type': 'application/json',
-      'X-API-Key': starApiKey,
     },
     body: JSON.stringify({ username: profileId }),
   });
