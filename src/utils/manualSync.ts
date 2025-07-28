@@ -2,10 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const triggerManualSync = async () => {
   try {
-    console.log('Triggering manual sync...');
+    console.log('Triggering manual sync via scheduler...');
     
-    const { data, error } = await supabase.functions.invoke('instagram-cron-sync', {
-      body: { sync_type: 'full' }
+    const { data, error } = await supabase.functions.invoke('instagram-scheduler', {
+      body: { force: true, sync_type: 'full' }
     });
 
     if (error) throw error;
