@@ -297,16 +297,19 @@ Deno.serve(async (req) => {
 
     try {
       switch (action) {
+        case 'profile':
         case 'sync_profile':
           const profileResult = await syncProfileData(supabase, profile_id, logId);
           result.profile_updated = profileResult.success;
           break;
 
+        case 'content':
         case 'sync_content':
           const contentResult = await syncContentData(supabase, profile_id, logId);
           result.content_stats = { created: contentResult.created, updated: contentResult.updated };
           break;
 
+        case 'full':
         case 'sync_full':
           const profileFullResult = await syncProfileData(supabase, profile_id, logId);
           const contentFullResult = await syncContentData(supabase, profile_id, logId);

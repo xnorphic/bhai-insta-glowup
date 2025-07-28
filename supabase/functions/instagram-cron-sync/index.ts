@@ -98,9 +98,9 @@ Deno.serve(async (req) => {
               999;
 
             // If no sync in last 24 hours, do full sync; otherwise just content
-            actualSyncType = hoursSinceLastSync > 24 ? 'sync_full' : 'sync_content';
+            actualSyncType = hoursSinceLastSync > 24 ? 'full' : 'content';
           } else {
-            actualSyncType = `sync_${sync_type}`;
+            actualSyncType = sync_type;
           }
 
           const result = await callSyncFunction(profile.username, actualSyncType);

@@ -283,22 +283,6 @@ Thank you!`;
     );
   }
 
-  // Trigger initial sync on component mount
-  useEffect(() => {
-    const performInitialSync = async () => {
-      try {
-        await triggerManualSync();
-        toast({
-          title: "Sync Started",
-          description: "Instagram data sync has been initiated",
-        });
-      } catch (error) {
-        console.error('Failed to trigger initial sync:', error);
-      }
-    };
-
-    performInitialSync();
-  }, [toast]);
 
   return (
     <div className="space-y-6">
