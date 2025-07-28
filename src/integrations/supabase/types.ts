@@ -285,6 +285,8 @@ export type Database = {
         Row: {
           access_token: string
           account_type: string | null
+          api_calls_reset_date: string | null
+          api_calls_today: number | null
           connected_at: string
           created_at: string
           follower_count: number | null
@@ -298,12 +300,15 @@ export type Database = {
           profile_picture_url: string | null
           refresh_token: string | null
           token_expires_at: string | null
+          total_api_calls: number | null
           user_id: string
           username: string
         }
         Insert: {
           access_token: string
           account_type?: string | null
+          api_calls_reset_date?: string | null
+          api_calls_today?: number | null
           connected_at?: string
           created_at?: string
           follower_count?: number | null
@@ -317,12 +322,15 @@ export type Database = {
           profile_picture_url?: string | null
           refresh_token?: string | null
           token_expires_at?: string | null
+          total_api_calls?: number | null
           user_id: string
           username: string
         }
         Update: {
           access_token?: string
           account_type?: string | null
+          api_calls_reset_date?: string | null
+          api_calls_today?: number | null
           connected_at?: string
           created_at?: string
           follower_count?: number | null
@@ -336,6 +344,7 @@ export type Database = {
           profile_picture_url?: string | null
           refresh_token?: string | null
           token_expires_at?: string | null
+          total_api_calls?: number | null
           user_id?: string
           username?: string
         }
@@ -356,25 +365,35 @@ export type Database = {
           alt_text: string | null
           audio_used: string | null
           caption: string | null
+          content_duration: number | null
           content_link: string
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
+          engagement_rate: number | null
+          hashtags: string[] | null
           id: string
+          impressions: number | null
           instagram_media_id: string
           is_boosted: boolean
           last_refreshed_at: string
           location_id: number | null
           location_name: string | null
+          mentions: string[] | null
           performance_category:
             | Database["public"]["Enums"]["performance_category"]
             | null
           post_date: string
+          post_type: string | null
+          reach: number | null
+          saves: number | null
+          sync_status: string | null
           thumbnail_url: string
           total_comments: number
           total_likes: number
           total_shares: number
           total_views: number
           tracked_profile_id: string
+          video_plays: number | null
         }
         Insert: {
           ai_performance_summary?: string | null
@@ -382,25 +401,35 @@ export type Database = {
           alt_text?: string | null
           audio_used?: string | null
           caption?: string | null
+          content_duration?: number | null
           content_link: string
           content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string
+          engagement_rate?: number | null
+          hashtags?: string[] | null
           id?: string
+          impressions?: number | null
           instagram_media_id: string
           is_boosted?: boolean
           last_refreshed_at: string
           location_id?: number | null
           location_name?: string | null
+          mentions?: string[] | null
           performance_category?:
             | Database["public"]["Enums"]["performance_category"]
             | null
           post_date: string
+          post_type?: string | null
+          reach?: number | null
+          saves?: number | null
+          sync_status?: string | null
           thumbnail_url: string
           total_comments?: number
           total_likes?: number
           total_shares?: number
           total_views?: number
           tracked_profile_id: string
+          video_plays?: number | null
         }
         Update: {
           ai_performance_summary?: string | null
@@ -408,25 +437,80 @@ export type Database = {
           alt_text?: string | null
           audio_used?: string | null
           caption?: string | null
+          content_duration?: number | null
           content_link?: string
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
+          engagement_rate?: number | null
+          hashtags?: string[] | null
           id?: string
+          impressions?: number | null
           instagram_media_id?: string
           is_boosted?: boolean
           last_refreshed_at?: string
           location_id?: number | null
           location_name?: string | null
+          mentions?: string[] | null
           performance_category?:
             | Database["public"]["Enums"]["performance_category"]
             | null
           post_date?: string
+          post_type?: string | null
+          reach?: number | null
+          saves?: number | null
+          sync_status?: string | null
           thumbnail_url?: string
           total_comments?: number
           total_likes?: number
           total_shares?: number
           total_views?: number
           tracked_profile_id?: string
+          video_plays?: number | null
+        }
+        Relationships: []
+      }
+      instagram_sync_logs: {
+        Row: {
+          api_calls_made: number | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          profile_id: string
+          records_created: number | null
+          records_processed: number | null
+          records_updated: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          api_calls_made?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          profile_id: string
+          records_created?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          api_calls_made?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          profile_id?: string
+          records_created?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
         }
         Relationships: []
       }
@@ -506,9 +590,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_api_calls: {
+        Args: { profile_username: string }
+        Returns: undefined
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_daily_api_calls: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       user_has_instagram_profile: {
         Args: { profile_id: string }
