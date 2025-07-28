@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface ProfileConnection {
-  id: string;
+  profile_id: string;
   username: string;
   user_id: string;
   last_sync_at: string | null;
@@ -14,14 +14,14 @@ interface ProfileConnection {
 }
 
 async function callSyncFunction(profileId: string, syncType: string) {
-  const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/instagram-data-sync`, {
+  const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/instagram-enhanced-sync`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      action: syncType,
+      action: `sync_${syncType}`,
       profile_id: profileId,
       sync_type: syncType
     })
@@ -51,10 +51,10 @@ Deno.serve(async (req) => {
 
     console.log(`Starting scheduled Instagram sync - type: ${sync_type}`);
 
-    // Get all active Instagram connections
+    // Get all active Instagram profiles
     const { data: profiles, error: profilesError } = await supabase
-      .from('instagram_connections')
-      .select('id, username, user_id, last_sync_at, is_active')
+      .from('instagram_profiles')
+      .select('profile_id, username, user_id, last_sync_at, is_active')
       .eq('is_active', true);
 
     if (profilesError) {
@@ -103,11 +103,11 @@ Deno.serve(async (req) => {
             actualSyncType = sync_type;
           }
 
-          const result = await callSyncFunction(profile.username, actualSyncType);
+          const result = await callSyncFunction(profile.profile_id, actualSyncType);
           
           successCount++;
           return {
-            profile_id: profile.username,
+            profile_id: profile.profile_id,
             status: 'success',
             sync_type: actualSyncType,
             result: result
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
           console.error(`Failed to sync ${profile.username}:`, error);
           failureCount++;
           return {
-            profile_id: profile.username,
+            profile_id: profile.profile_id,
             status: 'failed',
             sync_type: actualSyncType,
             error: error.message
