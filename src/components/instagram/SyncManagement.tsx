@@ -45,17 +45,20 @@ export const SyncManagement: React.FC = () => {
   // Manual sync mutation
   const syncMutation = useMutation({
     mutationFn: async (syncType: string) => {
-      const { data, error } = await supabase.functions.invoke('instagram-cron-sync', {
-        body: { sync_type: syncType }
+      const { data, error } = await supabase.functions.invoke('instagram-scheduler', {
+        body: { sync_type: syncType, force: true }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`Sync completed: ${data.successful} profiles synced successfully`);
+      const successCount = data.successful_syncs || data.successful || 0;
+      const totalProfiles = data.total_profiles || data.synced_profiles || 0;
+      toast.success(`Sync completed: ${successCount} of ${totalProfiles} profiles synced successfully`);
       queryClient.invalidateQueries({ queryKey: ['sync-logs'] });
       queryClient.invalidateQueries({ queryKey: ['instagram-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['instagram-profiles'] });
     },
     onError: (error) => {
       console.error('Sync error:', error);
