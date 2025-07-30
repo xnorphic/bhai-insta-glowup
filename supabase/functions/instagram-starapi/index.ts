@@ -164,16 +164,16 @@ serve(async (req) => {
 
     if (action === 'connect_profile') {
       try {
-        // Use the working user info endpoint with username parameter
+        // Use the working user posts endpoint to get profile info
         console.log('Fetching user info from StarAPI...')
-        const userResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/info`, {
+        const userResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/posts`, {
           method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
             'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ username: username })
+          body: JSON.stringify({ username: username, limit: 1 })
         })
 
         console.log('StarAPI user response status:', userResponse.status)
@@ -216,34 +216,51 @@ serve(async (req) => {
         const userData = await userResponse.json()
         console.log('User data received:', JSON.stringify(userData, null, 2))
 
-        // Check if the response contains valid user data
-        if (!userData || !userData.username) {
-          console.error('Invalid user data received:', userData)
+        // Extract user info from the posts response
+        if (!userData || !userData.data || !Array.isArray(userData.data) || userData.data.length === 0) {
+          console.error('No posts found or invalid data structure:', userData)
           return new Response(JSON.stringify({ 
-            error: 'Invalid profile data received. The username may not exist or be private.',
+            error: 'No posts found for this username. The profile may be private or have no posts.',
             received_data: userData,
-            suggestion: 'Please verify the Instagram username is correct and the profile is public.'
+            suggestion: 'Please verify the Instagram username is correct and the profile is public with at least one post.'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           })
         }
 
-        // Store connection in database
+        // Get user info from the first post
+        const firstPost = userData.data[0]
+        const userInfo = firstPost.user || firstPost.owner
+
+        if (!userInfo || !userInfo.username) {
+          console.error('Could not extract user info from posts:', firstPost)
+          return new Response(JSON.stringify({ 
+            error: 'Could not extract profile information from posts.',
+            suggestion: 'The profile may be private or the username may be incorrect.'
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Store connection in database using instagram_profiles table
         console.log('Storing connection in database...')
         const { data: connection, error } = await supabaseClient
-          .from('instagram_connections')
+          .from('instagram_profiles')
           .insert({
             user_id: user.id,
-            instagram_user_id: userData.id || userData.username,
-            username: userData.username,
-            access_token: 'starapi_token',
-            profile_picture_url: userData.profile_picture_url || null,
-            follower_count: userData.follower_count || 0,
-            following_count: userData.following_count || 0,
-            media_count: userData.media_count || 0,
-            is_business_account: userData.is_business_account || false,
-            account_type: userData.account_type || 'personal'
+            profile_id: userInfo.id || userInfo.username,
+            username: userInfo.username,
+            full_name: userInfo.full_name || userInfo.username,
+            biography: userInfo.biography || null,
+            profile_picture_url: userInfo.profile_picture_url || userInfo.profile_pic_url || null,
+            follower_count: userInfo.follower_count || 0,
+            following_count: userInfo.following_count || 0,
+            media_count: userData.data.length,
+            is_business_account: userInfo.is_business_account || false,
+            account_type: userInfo.account_type || 'personal',
+            is_active: true
           })
           .select()
           .single()
@@ -347,19 +364,20 @@ serve(async (req) => {
         
         for (const media of (mediaData.data || []).slice(0, 50)) {
           const contentItem = {
-            tracked_profile_id: username,
-            instagram_media_id: media.id,
-            content_link: media.permalink || `https://instagram.com/p/${media.shortcode}`,
-            content_type: media.media_type?.toLowerCase() === 'video' ? 'reel' : 
-                         media.media_type?.toLowerCase() === 'carousel_album' ? 'carousel' : 'post',
-            caption: media.caption?.substring(0, 2000) || null,
+            profile_id: username,
+            media_id: media.id,
+            media_type: media.media_type?.toLowerCase() || 'image',
+            media_url: media.display_url || media.media_url,
             thumbnail_url: media.thumbnail_url || media.display_url || media.media_url,
-            post_date: new Date(media.taken_at_timestamp * 1000).toISOString(),
-            total_likes: media.like_count || 0,
-            total_comments: media.comment_count || 0,
-            total_views: media.video_view_count || media.play_count || 0,
-            total_shares: 0, // StarAPI doesn't provide share count
-            last_refreshed_at: new Date().toISOString()
+            permalink: media.permalink || `https://instagram.com/p/${media.shortcode}`,
+            caption: media.caption?.substring(0, 2000) || null,
+            timestamp: new Date(media.taken_at_timestamp * 1000).toISOString(),
+            like_count: media.like_count || 0,
+            comment_count: media.comment_count || 0,
+            view_count: media.video_view_count || media.play_count || 0,
+            share_count: 0, // StarAPI doesn't provide share count
+            hashtags: media.hashtags || [],
+            mentions: media.mentions || []
           }
           contentItems.push(contentItem)
         }
@@ -367,9 +385,9 @@ serve(async (req) => {
         // Batch insert content
         console.log('Inserting content items into database:', contentItems.length)
         const { data: insertedContent, error: contentError } = await supabaseClient
-          .from('instagram_content')
+          .from('instagram_media')
           .upsert(contentItems, { 
-            onConflict: 'instagram_media_id',
+            onConflict: 'media_id',
             ignoreDuplicates: false 
           })
           .select()
