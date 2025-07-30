@@ -89,16 +89,16 @@ serve(async (req) => {
 
     if (action === 'verify_credentials') {
       try {
-        // Just test the API without storing anything
-        console.log('Testing StarAPI credentials...')
-        const testResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/info`, {
+        // Just test the API without storing anything - try the get_media endpoint since we know it works
+        console.log('Testing StarAPI credentials with get_media endpoint...')
+        const testResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/get_media`, {
           method: 'POST',
           headers: {
             'X-RapidAPI-Key': starApiKey,
             'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ username: username })
+          body: JSON.stringify({ id: 12281817, count: 1 }) // Use a known Instagram user ID for testing
         })
 
         console.log('StarAPI test response status:', testResponse.status)
