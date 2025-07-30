@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Dashboard } from "@/components/Dashboard";
 import { Home } from "@/components/Home";
 import { InstagramAnalytics } from "@/components/InstagramAnalytics";
-import { InstagramConnect } from "@/components/instagram/InstagramConnect";
+import { InstagramManagement } from "@/components/InstagramManagement";
 import { CompetitionAnalysis } from "@/components/CompetitionAnalysis";
 import { BrandbookBuilder } from "@/components/BrandbookBuilder";
 import { ContentCalendar } from "@/components/ContentCalendar";
@@ -23,7 +23,7 @@ const Index = () => {
       case "analytics":
         return <InstagramAnalytics />;
       case "connect":
-        return <InstagramConnect />;
+        return <InstagramManagement />;
       case "competition":
         return <CompetitionAnalysis />;
       case "brandbook":
