@@ -87,6 +87,81 @@ serve(async (req) => {
     
     console.log(`Processing ${action} for username: ${username}`)
 
+    if (action === 'verify_credentials') {
+      try {
+        // Just test the API without storing anything
+        console.log('Testing StarAPI credentials...')
+        const testResponse = await fetch(`https://starapi1.p.rapidapi.com/instagram/user/info`, {
+          method: 'POST',
+          headers: {
+            'X-RapidAPI-Key': starApiKey,
+            'X-RapidAPI-Host': 'starapi1.p.rapidapi.com',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: username })
+        })
+
+        console.log('StarAPI test response status:', testResponse.status)
+        
+        if (!testResponse.ok) {
+          const errorText = await testResponse.text()
+          console.error('StarAPI test failed:', testResponse.status, errorText)
+          
+          if (testResponse.status === 403) {
+            return new Response(JSON.stringify({ 
+              error: 'API Key Issue: Your StarAPI subscription may have expired or doesn\'t include access to this endpoint.',
+              details: errorText,
+              suggestion: 'Verify your StarAPI subscription status at https://rapidapi.com/hub'
+            }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+          }
+          
+          if (testResponse.status === 429) {
+            return new Response(JSON.stringify({ 
+              error: 'Rate limit exceeded. Please wait a moment before trying again.',
+              details: errorText
+            }), {
+              status: 429,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+          }
+
+          return new Response(JSON.stringify({ 
+            error: `API verification failed. Status: ${testResponse.status}`,
+            details: errorText,
+            suggestion: 'Please check your StarAPI subscription and try again.'
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const testData = await testResponse.json()
+        console.log('API verification successful')
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'StarAPI credentials verified successfully',
+          test_data: { username: testData.username }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+
+      } catch (apiError) {
+        console.error('API verification error:', apiError)
+        return new Response(JSON.stringify({ 
+          error: 'Failed to verify StarAPI credentials',
+          details: apiError.message,
+          suggestion: 'Please check your internet connection and try again.'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+    }
+
     if (action === 'connect_profile') {
       try {
         // Use the working user info endpoint with username parameter

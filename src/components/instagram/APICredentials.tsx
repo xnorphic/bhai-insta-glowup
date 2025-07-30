@@ -21,7 +21,7 @@ export const APICredentials = () => {
       
       const { data, error } = await supabase.functions.invoke('instagram-starapi', {
         body: { 
-          action: 'connect_profile', 
+          action: 'verify_credentials', 
           username: testUsername 
         }
       });
