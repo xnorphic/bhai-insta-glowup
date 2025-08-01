@@ -274,7 +274,7 @@ async function syncMediaData(
         const { error: mediaError } = await supabase
           .from('instagram_media')
           .upsert(mediaRecord, {
-            onConflict: 'media_id',
+            onConflict: 'media_id,profile_id',
           });
 
         if (mediaError) {

@@ -387,7 +387,7 @@ serve(async (req) => {
         const { data: insertedContent, error: contentError } = await supabaseClient
           .from('instagram_media')
           .upsert(contentItems, { 
-            onConflict: 'media_id',
+            onConflict: 'media_id,profile_id',
             ignoreDuplicates: false 
           })
           .select()
