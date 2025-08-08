@@ -7,6 +7,9 @@ import { instagramService } from "@/services/instagramService";
 import { AnalyticsFilters } from "./analytics/AnalyticsFilters";
 import { ContentTable } from "./analytics/ContentTable";
 import { PerformanceChart } from "./analytics/PerformanceChart";
+import { CollaborationInsights } from "./analytics/CollaborationInsights";
+import { ViralContentInsights } from "./analytics/ViralContentInsights";
+import { AudioInsights } from "./analytics/AudioInsights";
 import { DataLoader } from "./instagram/DataLoader";
 
 export const InstagramAnalytics = () => {
@@ -137,6 +140,21 @@ export const InstagramAnalytics = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Enhanced Analytics Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CollaborationInsights 
+              collaborationStats={analyticsSummary.collaborationStats}
+              totalPosts={analyticsSummary.totalPosts}
+            />
+            <ViralContentInsights 
+              viralStats={analyticsSummary.viralStats}
+              totalPosts={analyticsSummary.totalPosts}
+            />
+          </div>
+
+          {/* Audio Insights */}
+          <AudioInsights topAudioTracks={analyticsSummary.topAudioTracks} />
 
           {/* Performance Chart */}
           {performanceData && performanceData.length > 0 && (

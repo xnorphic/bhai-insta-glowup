@@ -112,6 +112,53 @@ export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }
         </div>
 
         <div className="flex-1 min-w-48">
+          <label className="text-sm font-medium text-[#333333] mb-2 block">Collaboration</label>
+          <Select 
+            value={filters.collaborationType || "all"} 
+            onValueChange={(value) => 
+              onFiltersChange({
+                ...filters,
+                collaborationType: value === "all" ? undefined : value as any
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All collaborations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All collaborations</SelectItem>
+              <SelectItem value="original">Original Content</SelectItem>
+              <SelectItem value="collaboration">Collaborations</SelectItem>
+              <SelectItem value="user_generated">User Generated</SelectItem>
+              <SelectItem value="paid_partnership">Paid Partnerships</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex-1 min-w-48">
+          <label className="text-sm font-medium text-[#333333] mb-2 block">Viral Content</label>
+          <Select 
+            value={filters.viralStatus || "all"} 
+            onValueChange={(value) => 
+              onFiltersChange({
+                ...filters,
+                viralStatus: value === "all" ? undefined : value as any
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All content" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All content</SelectItem>
+              <SelectItem value="trending">Trending in Clips</SelectItem>
+              <SelectItem value="viral">Viral (High Reshares)</SelectItem>
+              <SelectItem value="standard">Standard Performance</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex-1 min-w-48">
           <label className="text-sm font-medium text-[#333333] mb-2 block">Date Range</label>
           <Popover>
             <PopoverTrigger asChild>
@@ -142,7 +189,7 @@ export const AnalyticsFilters = ({ filters, onFiltersChange, availableProfiles }
           </Popover>
         </div>
 
-        {(filters.profileId || filters.contentType || filters.performanceCategory || filters.dateRange) && (
+        {(filters.profileId || filters.contentType || filters.performanceCategory || filters.collaborationType || filters.viralStatus || filters.dateRange) && (
           <Button 
             variant="ghost" 
             size="sm"

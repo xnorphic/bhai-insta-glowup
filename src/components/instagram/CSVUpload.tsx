@@ -45,7 +45,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
   const [importStatus, setImportStatus] = useState<string>('');
   const [previewData, setPreviewData] = useState<string[][]>([]);
 
-  // Available Instagram media fields for mapping (based on your CSV structure)
+  // Enhanced Instagram media fields for mapping (including collaboration & trending data)
   const availableFields = [
     { value: 'post_url', label: 'Post URL (Required)', required: true },
     { value: 'post_date', label: 'Post Date (Required)', required: true },
@@ -61,6 +61,18 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
     { value: 'engagement_rate', label: 'Engagement Rate' },
     { value: 'follower_count', label: 'Follower Count' },
     { value: 'tags', label: 'Tags (comma-separated)' },
+    // Enhanced collaboration fields
+    { value: 'og_username', label: 'Original Creator Username' },
+    { value: 'collab_with', label: 'Collaboration Partner' },
+    // Audio and trending insights
+    { value: 'audio_title', label: 'Audio Title' },
+    { value: 'audio_artist', label: 'Audio Artist' },
+    { value: 'play_count', label: 'Play Count (Reels)' },
+    { value: 'reshare_count', label: 'Reshare Count' },
+    { value: 'is_trending_in_clips', label: 'Trending in Clips (true/false)' },
+    // Additional metrics
+    { value: 'is_paid_partnership', label: 'Paid Partnership (true/false)' },
+    { value: 'location_name', label: 'Location Name' },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,27 +107,32 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         );
         setPreviewData(preview);
 
-        // Auto-map common fields based on your CSV structure
+        // Enhanced auto-mapping with intelligent field detection
         const autoMapping: FieldMapping = {};
         headers.forEach(header => {
           const lowerHeader = header.toLowerCase().replace(/\s+/g, '_');
-          if (lowerHeader.includes('post_url') || lowerHeader.includes('url')) {
+          
+          // Core required fields
+          if (lowerHeader.includes('post_url') || lowerHeader.includes('url') || lowerHeader.includes('permalink')) {
             autoMapping[header] = 'post_url';
-          } else if (lowerHeader.includes('post_date') || lowerHeader.includes('date')) {
+          } else if (lowerHeader.includes('post_date') || lowerHeader.includes('date') || lowerHeader.includes('timestamp')) {
             autoMapping[header] = 'post_date';
-          } else if (lowerHeader.includes('post_type') || lowerHeader.includes('type')) {
+          } else if (lowerHeader.includes('post_type') || lowerHeader.includes('type') || lowerHeader.includes('media_type')) {
             autoMapping[header] = 'post_type';
-          } else if (lowerHeader.includes('caption')) {
+          } else if (lowerHeader.includes('caption') || lowerHeader.includes('description')) {
             autoMapping[header] = 'caption';
-          } else if (lowerHeader.includes('likes') || lowerHeader === 'like') {
+          }
+          
+          // Engagement metrics
+          else if (lowerHeader.includes('likes') || lowerHeader === 'like' || lowerHeader === 'like_count') {
             autoMapping[header] = 'likes';
-          } else if (lowerHeader.includes('comments') || lowerHeader === 'comment') {
+          } else if (lowerHeader.includes('comments') || lowerHeader === 'comment' || lowerHeader === 'comment_count') {
             autoMapping[header] = 'comments';
-          } else if (lowerHeader.includes('shares') || lowerHeader === 'share') {
+          } else if (lowerHeader.includes('shares') || lowerHeader === 'share' || lowerHeader === 'share_count') {
             autoMapping[header] = 'shares';
-          } else if (lowerHeader.includes('saves') || lowerHeader === 'save') {
+          } else if (lowerHeader.includes('saves') || lowerHeader === 'save' || lowerHeader === 'save_count') {
             autoMapping[header] = 'saves';
-          } else if (lowerHeader.includes('views') || lowerHeader === 'view') {
+          } else if (lowerHeader.includes('views') || lowerHeader === 'view' || lowerHeader === 'view_count') {
             autoMapping[header] = 'views';
           } else if (lowerHeader.includes('reach')) {
             autoMapping[header] = 'reach';
@@ -125,6 +142,33 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
             autoMapping[header] = 'engagement_rate';
           } else if (lowerHeader.includes('follower')) {
             autoMapping[header] = 'follower_count';
+          }
+          
+          // Enhanced collaboration fields
+          else if (lowerHeader.includes('og_username') || lowerHeader.includes('original_username')) {
+            autoMapping[header] = 'og_username';
+          } else if (lowerHeader.includes('collab_with') || lowerHeader.includes('collaboration') || lowerHeader.includes('partner')) {
+            autoMapping[header] = 'collab_with';
+          }
+          
+          // Audio and content insights
+          else if (lowerHeader.includes('audio_title') || lowerHeader.includes('music_title') || lowerHeader.includes('sound_title')) {
+            autoMapping[header] = 'audio_title';
+          } else if (lowerHeader.includes('audio_artist') || lowerHeader.includes('music_artist') || lowerHeader.includes('sound_artist')) {
+            autoMapping[header] = 'audio_artist';
+          } else if (lowerHeader.includes('play_count') || lowerHeader === 'plays') {
+            autoMapping[header] = 'play_count';
+          } else if (lowerHeader.includes('reshare') || lowerHeader.includes('repost')) {
+            autoMapping[header] = 'reshare_count';
+          } else if (lowerHeader.includes('trending') || lowerHeader.includes('viral')) {
+            autoMapping[header] = 'is_trending_in_clips';
+          }
+          
+          // Additional insights
+          else if (lowerHeader.includes('paid_partnership') || lowerHeader.includes('sponsored')) {
+            autoMapping[header] = 'is_paid_partnership';
+          } else if (lowerHeader.includes('location')) {
+            autoMapping[header] = 'location_name';
           } else if (lowerHeader.includes('tags') || lowerHeader.includes('hashtag')) {
             autoMapping[header] = 'tags';
           }
@@ -157,7 +201,16 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
       'Impressions',
       'Engagement Rate',
       'Follower Count',
-      'Tags'
+      'Tags',
+      'OG Username',
+      'Collab With',
+      'Audio Title',
+      'Audio Artist', 
+      'Play Count',
+      'Reshare Count',
+      'Is Trending in Clips',
+      'Is Paid Partnership',
+      'Location Name'
     ];
     
     const sampleData = [
@@ -175,7 +228,16 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         '1500',
         '12.5%',
         '5000',
-        'newlaunch,innovation,product'
+        'newlaunch,innovation,product',
+        '',
+        'partneruser',
+        'Trending Audio Track',
+        'Popular Artist',
+        '',
+        '8',
+        'true',
+        'false',
+        'New York, NY'
       ],
       [
         'https://www.instagram.com/p/DEF456/',
@@ -191,7 +253,16 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         '3200',
         '18.2%',
         '5020',
-        'behindthescenes,content,video'
+        'behindthescenes,content,video',
+        'originalcreator',
+        '',
+        'Behind the Scenes Music',
+        'Studio Artist',
+        '2800',
+        '15',
+        'false',
+        'true',
+        'Los Angeles, CA'
       ]
     ];
 
