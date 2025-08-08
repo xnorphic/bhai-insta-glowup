@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Instagram, Settings, Key, Activity, BarChart3, Upload } from 'lucide-react';
+import { Instagram, Settings, Key, Activity, BarChart3, Upload, Brain } from 'lucide-react';
 import { APICredentials } from './instagram/APICredentials';
 import { InstagramConnect } from './instagram/InstagramConnect';
 import { SyncManagement } from './instagram/SyncManagement';
 import { CSVUpload } from './instagram/CSVUpload';
 import { ImportHistory } from './instagram/ImportHistory';
+import { CaptionAnalysis } from './instagram/CaptionAnalysis';
 import { supabase } from '@/integrations/supabase/client';
 
 export const InstagramManagement = () => {
@@ -38,7 +39,7 @@ export const InstagramManagement = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -58,6 +59,10 @@ export const InstagramManagement = () => {
           <TabsTrigger value="csv-import" className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
             CSV Import
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            AI Analysis
           </TabsTrigger>
         </TabsList>
 
@@ -175,6 +180,38 @@ export const InstagramManagement = () => {
               <CSVUpload profiles={profiles} />
               <ImportHistory />
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai-analysis" className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">AI Caption Analysis</h2>
+              <p className="text-muted-foreground">
+                Use AI to analyze your Instagram captions and automatically generate relevant tags for better content categorization and insights.
+              </p>
+            </div>
+            {profiles.length > 0 ? (
+              <div className="space-y-4">
+                {profiles.map((profile) => (
+                  <CaptionAnalysis 
+                    key={profile.profile_id}
+                    profileId={profile.profile_id}
+                    onComplete={() => {
+                      // Could trigger a refresh or show success message
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <p className="text-muted-foreground">
+                    No Instagram profiles connected. Please connect an Instagram profile first to use AI analysis.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
