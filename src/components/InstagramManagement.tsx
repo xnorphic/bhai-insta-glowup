@@ -1,12 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Instagram, Settings, Key, Activity, BarChart3 } from 'lucide-react';
+import { Instagram, Settings, Key, Activity, BarChart3, Upload } from 'lucide-react';
 import { APICredentials } from './instagram/APICredentials';
 import { InstagramConnect } from './instagram/InstagramConnect';
 import { SyncManagement } from './instagram/SyncManagement';
+import { CSVUpload } from './instagram/CSVUpload';
+import { ImportHistory } from './instagram/ImportHistory';
+import { supabase } from '@/integrations/supabase/client';
 
 export const InstagramManagement = () => {
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data } = await supabase
+        .from('instagram_profiles')
+        .select('profile_id, username, full_name')
+        .eq('is_active', true);
+      
+      if (data) {
+        setProfiles(data);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -19,7 +38,7 @@ export const InstagramManagement = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -35,6 +54,10 @@ export const InstagramManagement = () => {
           <TabsTrigger value="monitoring" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="csv-import" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            CSV Import
           </TabsTrigger>
         </TabsList>
 
@@ -138,6 +161,21 @@ export const InstagramManagement = () => {
 
         <TabsContent value="monitoring" className="space-y-6">
           <SyncManagement />
+        </TabsContent>
+
+        <TabsContent value="csv-import" className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">CSV Data Import</h2>
+              <p className="text-muted-foreground">
+                Import Instagram data from CSV files as an alternative to API synchronization.
+              </p>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <CSVUpload profiles={profiles} />
+              <ImportHistory />
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

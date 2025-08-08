@@ -281,85 +281,252 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_csv_imports: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          failed_rows: number
+          field_mapping: Json
+          file_size: number
+          filename: string
+          id: string
+          import_settings: Json | null
+          processed_rows: number
+          processing_errors: Json | null
+          started_at: string
+          status: string
+          successful_rows: number
+          total_rows: number
+          user_id: string
+          validation_errors: Json | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          failed_rows?: number
+          field_mapping: Json
+          file_size: number
+          filename: string
+          id?: string
+          import_settings?: Json | null
+          processed_rows?: number
+          processing_errors?: Json | null
+          started_at?: string
+          status?: string
+          successful_rows?: number
+          total_rows: number
+          user_id: string
+          validation_errors?: Json | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          failed_rows?: number
+          field_mapping?: Json
+          file_size?: number
+          filename?: string
+          id?: string
+          import_settings?: Json | null
+          processed_rows?: number
+          processing_errors?: Json | null
+          started_at?: string
+          status?: string
+          successful_rows?: number
+          total_rows?: number
+          user_id?: string
+          validation_errors?: Json | null
+        }
+        Relationships: []
+      }
+      instagram_csv_staging: {
+        Row: {
+          created_at: string
+          id: string
+          import_id: string
+          processed: boolean
+          processing_errors: Json | null
+          raw_data: Json
+          row_number: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          import_id: string
+          processed?: boolean
+          processing_errors?: Json | null
+          raw_data: Json
+          row_number: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          import_id?: string
+          processed?: boolean
+          processing_errors?: Json | null
+          raw_data?: Json
+          row_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_csv_staging_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_csv_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_media: {
         Row: {
+          audio_artist: string | null
+          audio_title: string | null
+          audio_url: string | null
           caption: string | null
+          carousel_media_count: number | null
           children_media: Json | null
+          collab_with: string | null
           comment_count: number | null
           created_at: string
           engagement_rate: number | null
+          expire_datetime_ist: string | null
+          follower_count: number | null
+          full_name: string | null
           hashtags: string[] | null
           id: string
           insights: Json | null
+          is_collab: boolean | null
+          is_paid_partnership: boolean | null
+          is_reel_media: boolean | null
           is_story_available: boolean | null
+          is_trending_in_clips: boolean | null
+          is_video: boolean | null
           last_updated: string
           like_count: number | null
+          link: string | null
           location_id: string | null
           location_name: string | null
           media_id: string
           media_type: string
           media_url: string
           mentions: string[] | null
+          og_username: string | null
           permalink: string
+          pk: string
+          play_count: number | null
+          post_datetime_ist: string | null
           profile_id: string
+          reshare_count: number | null
           save_count: number | null
           share_count: number | null
+          share_count_disabled: boolean | null
+          story_id: string | null
+          sync_datetime: string | null
+          taken_at_ist: string | null
           thumbnail_url: string | null
           timestamp: string
+          username: string | null
           video_duration: number | null
           view_count: number | null
         }
         Insert: {
+          audio_artist?: string | null
+          audio_title?: string | null
+          audio_url?: string | null
           caption?: string | null
+          carousel_media_count?: number | null
           children_media?: Json | null
+          collab_with?: string | null
           comment_count?: number | null
-          created_at?: string
+          created_at: string
           engagement_rate?: number | null
+          expire_datetime_ist?: string | null
+          follower_count?: number | null
+          full_name?: string | null
           hashtags?: string[] | null
-          id?: string
+          id: string
           insights?: Json | null
+          is_collab?: boolean | null
+          is_paid_partnership?: boolean | null
+          is_reel_media?: boolean | null
           is_story_available?: boolean | null
-          last_updated?: string
+          is_trending_in_clips?: boolean | null
+          is_video?: boolean | null
+          last_updated: string
           like_count?: number | null
+          link?: string | null
           location_id?: string | null
           location_name?: string | null
           media_id: string
           media_type: string
           media_url: string
           mentions?: string[] | null
+          og_username?: string | null
           permalink: string
+          pk: string
+          play_count?: number | null
+          post_datetime_ist?: string | null
           profile_id: string
+          reshare_count?: number | null
           save_count?: number | null
           share_count?: number | null
+          share_count_disabled?: boolean | null
+          story_id?: string | null
+          sync_datetime?: string | null
+          taken_at_ist?: string | null
           thumbnail_url?: string | null
           timestamp: string
+          username?: string | null
           video_duration?: number | null
           view_count?: number | null
         }
         Update: {
+          audio_artist?: string | null
+          audio_title?: string | null
+          audio_url?: string | null
           caption?: string | null
+          carousel_media_count?: number | null
           children_media?: Json | null
+          collab_with?: string | null
           comment_count?: number | null
           created_at?: string
           engagement_rate?: number | null
+          expire_datetime_ist?: string | null
+          follower_count?: number | null
+          full_name?: string | null
           hashtags?: string[] | null
           id?: string
           insights?: Json | null
+          is_collab?: boolean | null
+          is_paid_partnership?: boolean | null
+          is_reel_media?: boolean | null
           is_story_available?: boolean | null
+          is_trending_in_clips?: boolean | null
+          is_video?: boolean | null
           last_updated?: string
           like_count?: number | null
+          link?: string | null
           location_id?: string | null
           location_name?: string | null
           media_id?: string
           media_type?: string
           media_url?: string
           mentions?: string[] | null
+          og_username?: string | null
           permalink?: string
+          pk?: string
+          play_count?: number | null
+          post_datetime_ist?: string | null
           profile_id?: string
+          reshare_count?: number | null
           save_count?: number | null
           share_count?: number | null
+          share_count_disabled?: boolean | null
+          story_id?: string | null
+          sync_datetime?: string | null
+          taken_at_ist?: string | null
           thumbnail_url?: string | null
           timestamp?: string
+          username?: string | null
           video_duration?: number | null
           view_count?: number | null
         }
@@ -660,6 +827,10 @@ export type Database = {
       reset_daily_api_calls: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      transform_csv_to_instagram_media: {
+        Args: { import_id_param: string; profile_id_param: string }
+        Returns: Json
       }
       trigger_manual_sync: {
         Args: Record<PropertyKey, never>
