@@ -348,7 +348,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
                           <SelectValue placeholder="Select field..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Skip this column</SelectItem>
+                          <SelectItem value="skip">Skip this column</SelectItem>
                           {availableFields.map((field) => (
                             <SelectItem 
                               key={field.value} 
