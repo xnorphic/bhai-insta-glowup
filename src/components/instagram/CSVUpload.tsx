@@ -412,9 +412,9 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         </div>
 
         {/* Profile Selection */}
-        {profiles.length > 0 && (
-          <div className="space-y-2">
-            <Label htmlFor="profile-select">Target Instagram Profile</Label>
+        <div className="space-y-2">
+          <Label htmlFor="profile-select">Target Instagram Profile</Label>
+          {profiles.length > 0 ? (
             <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={isUploading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a profile..." />
@@ -427,8 +427,15 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        )}
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No Instagram profiles connected. Please connect an Instagram profile first in the "Connect" tab before uploading CSV data.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
 
         {/* CSV Preview and Field Mapping */}
         {csvHeaders.length > 0 && (
@@ -537,10 +544,10 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         <div className="flex gap-2">
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || !selectedProfile || !csvHeaders.length || isUploading}
+            disabled={!selectedFile || !selectedProfile || !csvHeaders.length || isUploading || profiles.length === 0}
             className="flex-1"
           >
-            {isUploading ? 'Processing...' : 'Upload & Import'}
+            {isUploading ? 'Processing...' : profiles.length === 0 ? 'Connect Profile First' : 'Upload & Import'}
           </Button>
           {(selectedFile || importStatus) && (
             <Button variant="outline" onClick={reset} disabled={isUploading}>
