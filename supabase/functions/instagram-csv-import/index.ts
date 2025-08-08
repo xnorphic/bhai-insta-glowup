@@ -86,8 +86,8 @@ Deno.serve(async (req) => {
     const headerLine = lines[0];
     const headers = headerLine.split(settings.delimiter).map(h => h.trim().replace(/"/g, ''));
     
-    // Validate required fields are mapped
-    const requiredFields = ['media_id', 'media_url', 'timestamp'];
+    // Validate required fields are mapped for new CSV structure
+    const requiredFields = ['post_url', 'post_date', 'post_type', 'caption'];
     const mappedFields = Object.keys(requestData.field_mapping);
     const missingRequired = requiredFields.filter(field => 
       !mappedFields.some(mapped => requestData.field_mapping[mapped] === field)
@@ -166,15 +166,80 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Validate timestamp format
-      if (rowData.timestamp && !hasErrors) {
+      // Validate post_date format
+      if (rowData.post_date && !hasErrors) {
         try {
-          new Date(rowData.timestamp).toISOString();
+          // Try multiple date formats
+          const dateStr = rowData.post_date.trim();
+          let parsedDate;
+          
+          // Check if it's in YYYY-MM-DD format
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            parsedDate = new Date(dateStr + 'T00:00:00Z');
+          } else {
+            parsedDate = new Date(dateStr);
+          }
+          
+          if (isNaN(parsedDate.getTime())) {
+            throw new Error('Invalid date');
+          }
         } catch {
           validationErrors.push({
             row: i + (settings.skip_header ? 2 : 1),
-            field: 'timestamp',
-            error: 'Invalid date format'
+            field: 'post_date',
+            error: 'Invalid date format (expected YYYY-MM-DD or ISO format)'
+          });
+          hasErrors = true;
+        }
+      }
+
+      // Validate numeric fields
+      const numericFields = ['likes', 'comments', 'shares', 'saves', 'views', 'reach', 'impressions', 'follower_count'];
+      for (const field of numericFields) {
+        if (rowData[field] && rowData[field].trim() !== '') {
+          const value = rowData[field].replace(/,/g, ''); // Remove commas
+          if (isNaN(Number(value))) {
+            validationErrors.push({
+              row: i + (settings.skip_header ? 2 : 1),
+              field: field,
+              error: `Invalid numeric value: ${rowData[field]}`
+            });
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Validate engagement_rate if present
+      if (rowData.engagement_rate && rowData.engagement_rate.trim() !== '') {
+        const value = rowData.engagement_rate.replace(/%/g, ''); // Remove % sign
+        if (isNaN(Number(value))) {
+          validationErrors.push({
+            row: i + (settings.skip_header ? 2 : 1),
+            field: 'engagement_rate',
+            error: `Invalid engagement rate: ${rowData.engagement_rate}`
+          });
+          hasErrors = true;
+        }
+      }
+
+      // Validate post_url format
+      if (rowData.post_url && !hasErrors) {
+        try {
+          new URL(rowData.post_url);
+          // Check if it's an Instagram URL
+          if (!rowData.post_url.includes('instagram.com')) {
+            validationErrors.push({
+              row: i + (settings.skip_header ? 2 : 1),
+              field: 'post_url',
+              error: 'URL must be an Instagram URL'
+            });
+            hasErrors = true;
+          }
+        } catch {
+          validationErrors.push({
+            row: i + (settings.skip_header ? 2 : 1),
+            field: 'post_url',
+            error: 'Invalid URL format'
           });
           hasErrors = true;
         }

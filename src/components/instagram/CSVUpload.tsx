@@ -45,24 +45,22 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
   const [importStatus, setImportStatus] = useState<string>('');
   const [previewData, setPreviewData] = useState<string[][]>([]);
 
-  // Available Instagram media fields for mapping
+  // Available Instagram media fields for mapping (based on your CSV structure)
   const availableFields = [
-    { value: 'media_id', label: 'Media ID (Required)', required: true },
-    { value: 'media_url', label: 'Media URL (Required)', required: true },
-    { value: 'timestamp', label: 'Timestamp (Required)', required: true },
-    { value: 'media_type', label: 'Media Type' },
-    { value: 'thumbnail_url', label: 'Thumbnail URL' },
-    { value: 'permalink', label: 'Permalink' },
-    { value: 'caption', label: 'Caption' },
-    { value: 'like_count', label: 'Like Count' },
-    { value: 'comment_count', label: 'Comment Count' },
-    { value: 'share_count', label: 'Share Count' },
-    { value: 'view_count', label: 'View Count' },
-    { value: 'save_count', label: 'Save Count' },
+    { value: 'post_url', label: 'Post URL (Required)', required: true },
+    { value: 'post_date', label: 'Post Date (Required)', required: true },
+    { value: 'post_type', label: 'Post Type (Required)', required: true },
+    { value: 'caption', label: 'Caption (Required)', required: true },
+    { value: 'likes', label: 'Likes' },
+    { value: 'comments', label: 'Comments' },
+    { value: 'shares', label: 'Shares' },
+    { value: 'saves', label: 'Saves' },
+    { value: 'views', label: 'Views' },
+    { value: 'reach', label: 'Reach' },
+    { value: 'impressions', label: 'Impressions' },
     { value: 'engagement_rate', label: 'Engagement Rate' },
-    { value: 'hashtags', label: 'Hashtags (comma-separated)' },
-    { value: 'mentions', label: 'Mentions (comma-separated)' },
-    { value: 'location_name', label: 'Location Name' },
+    { value: 'follower_count', label: 'Follower Count' },
+    { value: 'tags', label: 'Tags (comma-separated)' },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,22 +95,38 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         );
         setPreviewData(preview);
 
-        // Auto-map common fields
+        // Auto-map common fields based on your CSV structure
         const autoMapping: FieldMapping = {};
         headers.forEach(header => {
-          const lowerHeader = header.toLowerCase();
-          if (lowerHeader.includes('id') && lowerHeader.includes('media')) {
-            autoMapping[header] = 'media_id';
-          } else if (lowerHeader.includes('url') && !lowerHeader.includes('thumb')) {
-            autoMapping[header] = 'media_url';
-          } else if (lowerHeader.includes('timestamp') || lowerHeader.includes('date')) {
-            autoMapping[header] = 'timestamp';
+          const lowerHeader = header.toLowerCase().replace(/\s+/g, '_');
+          if (lowerHeader.includes('post_url') || lowerHeader.includes('url')) {
+            autoMapping[header] = 'post_url';
+          } else if (lowerHeader.includes('post_date') || lowerHeader.includes('date')) {
+            autoMapping[header] = 'post_date';
+          } else if (lowerHeader.includes('post_type') || lowerHeader.includes('type')) {
+            autoMapping[header] = 'post_type';
           } else if (lowerHeader.includes('caption')) {
             autoMapping[header] = 'caption';
-          } else if (lowerHeader.includes('like')) {
-            autoMapping[header] = 'like_count';
-          } else if (lowerHeader.includes('comment')) {
-            autoMapping[header] = 'comment_count';
+          } else if (lowerHeader.includes('likes') || lowerHeader === 'like') {
+            autoMapping[header] = 'likes';
+          } else if (lowerHeader.includes('comments') || lowerHeader === 'comment') {
+            autoMapping[header] = 'comments';
+          } else if (lowerHeader.includes('shares') || lowerHeader === 'share') {
+            autoMapping[header] = 'shares';
+          } else if (lowerHeader.includes('saves') || lowerHeader === 'save') {
+            autoMapping[header] = 'saves';
+          } else if (lowerHeader.includes('views') || lowerHeader === 'view') {
+            autoMapping[header] = 'views';
+          } else if (lowerHeader.includes('reach')) {
+            autoMapping[header] = 'reach';
+          } else if (lowerHeader.includes('impressions')) {
+            autoMapping[header] = 'impressions';
+          } else if (lowerHeader.includes('engagement')) {
+            autoMapping[header] = 'engagement_rate';
+          } else if (lowerHeader.includes('follower')) {
+            autoMapping[header] = 'follower_count';
+          } else if (lowerHeader.includes('tags') || lowerHeader.includes('hashtag')) {
+            autoMapping[header] = 'tags';
           }
         });
         setFieldMapping(autoMapping);
@@ -130,20 +144,55 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
 
   const downloadTemplate = () => {
     const templateHeaders = [
-      'media_id',
-      'media_url',
-      'timestamp',
-      'media_type',
-      'caption',
-      'like_count',
-      'comment_count',
-      'hashtags',
-      'mentions'
+      'Post URL',
+      'Post Date',
+      'Post Type',
+      'Caption',
+      'Likes',
+      'Comments',
+      'Shares',
+      'Saves',
+      'Views',
+      'Reach',
+      'Impressions',
+      'Engagement Rate',
+      'Follower Count',
+      'Tags'
     ];
     
     const sampleData = [
-      ['12345_67890', 'https://example.com/image.jpg', '2024-01-15T10:30:00Z', 'image', 'Sample caption #hashtag', '100', '10', 'hashtag,example', 'username1,username2'],
-      ['12345_67891', 'https://example.com/video.mp4', '2024-01-16T14:20:00Z', 'video', 'Another post @mention', '250', '25', 'video,content', 'mention']
+      [
+        'https://www.instagram.com/p/ABC123/',
+        '2024-01-15',
+        'Carousel',
+        'Check out our latest product! #newlaunch #innovation',
+        '150',
+        '12',
+        '5',
+        '25',
+        '1200',
+        '800',
+        '1500',
+        '12.5%',
+        '5000',
+        'newlaunch,innovation,product'
+      ],
+      [
+        'https://www.instagram.com/p/DEF456/',
+        '2024-01-16',
+        'Reel',
+        'Behind the scenes content 🎬',
+        '320',
+        '28',
+        '15',
+        '45',
+        '2800',
+        '1500',
+        '3200',
+        '18.2%',
+        '5020',
+        'behindthescenes,content,video'
+      ]
     ];
 
     const csvContent = [
@@ -161,7 +210,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
   };
 
   const validateMapping = (): boolean => {
-    const requiredFields = ['media_id', 'media_url', 'timestamp'];
+    const requiredFields = ['post_url', 'post_date', 'post_type', 'caption'];
     const mappedFields = Object.values(fieldMapping);
     const missingRequired = requiredFields.filter(field => !mappedFields.includes(field));
     
