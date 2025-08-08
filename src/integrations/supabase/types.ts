@@ -829,7 +829,7 @@ export type Database = {
         Returns: undefined
       }
       transform_csv_to_instagram_media: {
-        Args: { import_id_param: string; profile_id_param: string }
+        Args: { import_id_param: string; profile_id_param?: string }
         Returns: Json
       }
       trigger_manual_sync: {
