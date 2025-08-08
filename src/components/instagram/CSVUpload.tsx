@@ -47,6 +47,8 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
 
   // Enhanced Instagram media fields for mapping (including collaboration & trending data)
   const availableFields = [
+    { value: 'profile_id', label: 'Profile ID (Required for multi-profile CSV)', required: false },
+    { value: 'username', label: 'Username (Required for multi-profile CSV)', required: false },
     { value: 'post_url', label: 'Post URL (Required)', required: true },
     { value: 'post_date', label: 'Post Date (Required)', required: true },
     { value: 'post_type', label: 'Post Type (Required)', required: true },
@@ -112,8 +114,15 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         headers.forEach(header => {
           const lowerHeader = header.toLowerCase().replace(/\s+/g, '_');
           
+          // Profile identification fields
+          if (lowerHeader.includes('profile_id') || lowerHeader.includes('account_id')) {
+            autoMapping[header] = 'profile_id';
+          } else if (lowerHeader.includes('username') || lowerHeader.includes('handle') || lowerHeader.includes('account_name')) {
+            autoMapping[header] = 'username';
+          }
+          
           // Core required fields
-          if (lowerHeader.includes('post_url') || lowerHeader.includes('url') || lowerHeader.includes('permalink')) {
+          else if (lowerHeader.includes('post_url') || lowerHeader.includes('url') || lowerHeader.includes('permalink')) {
             autoMapping[header] = 'post_url';
           } else if (lowerHeader.includes('post_date') || lowerHeader.includes('date') || lowerHeader.includes('timestamp')) {
             autoMapping[header] = 'post_date';
@@ -188,6 +197,8 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
 
   const downloadTemplate = () => {
     const templateHeaders = [
+      'Profile ID',
+      'Username',
       'Post URL',
       'Post Date',
       'Post Type',
@@ -215,6 +226,8 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
     
     const sampleData = [
       [
+        'profile123',
+        'myaccount',
         'https://www.instagram.com/p/ABC123/',
         '2024-01-15',
         'Carousel',
@@ -240,6 +253,8 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         'New York, NY'
       ],
       [
+        'profile456',
+        'anotheraccount',
         'https://www.instagram.com/p/DEF456/',
         '2024-01-16',
         'Reel',
@@ -285,6 +300,10 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
     const mappedFields = Object.values(fieldMapping);
     const missingRequired = requiredFields.filter(field => !mappedFields.includes(field));
     
+    // Check if we have profile identification (either profile_id or username)
+    const hasProfileId = mappedFields.includes('profile_id');
+    const hasUsername = mappedFields.includes('username');
+    
     if (missingRequired.length > 0) {
       toast({
         title: "Missing required fields",
@@ -294,11 +313,20 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
       return false;
     }
     
+    if (!hasProfileId && !hasUsername && !selectedProfile) {
+      toast({
+        title: "Profile identification required",
+        description: "For multi-profile CSV, please map either 'Profile ID' or 'Username' field, or select a single target profile.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     return true;
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !selectedProfile || !validateMapping()) {
+    if (!selectedFile || !validateMapping()) {
       return;
     }
 
@@ -321,12 +349,13 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
           body: {
             file: base64Content,
             filename: selectedFile.name,
-            profile_id: selectedProfile,
+            profile_id: selectedProfile || null, // Can be null for multi-profile CSV
             field_mapping: fieldMapping,
             import_settings: {
               skip_header: true,
               delimiter: ',',
-              update_existing: true
+              update_existing: true,
+              multi_profile: !selectedProfile // Indicate if this is a multi-profile upload
             }
           }
         });
@@ -413,25 +442,30 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
 
         {/* Profile Selection */}
         <div className="space-y-2">
-          <Label htmlFor="profile-select">Target Instagram Profile</Label>
+          <Label htmlFor="profile-select">Target Instagram Profile (Optional for multi-profile CSV)</Label>
           {profiles.length > 0 ? (
-            <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={isUploading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a profile..." />
-              </SelectTrigger>
-              <SelectContent>
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.profile_id} value={profile.profile_id}>
-                    @{profile.username} {profile.full_name && `(${profile.full_name})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={isUploading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select single profile (leave empty for multi-profile CSV)..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.profile_id} value={profile.profile_id}>
+                      @{profile.username} {profile.full_name && `(${profile.full_name})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Leave empty if your CSV contains data for multiple profiles. Make sure to map 'Profile ID' or 'Username' fields.
+              </p>
+            </div>
           ) : (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No Instagram profiles connected. Please connect an Instagram profile first in the "Connect" tab before uploading CSV data.
+                No Instagram profiles connected yet. For multi-profile CSV uploads, make sure your CSV includes profile identification fields.
               </AlertDescription>
             </Alert>
           )}
@@ -544,10 +578,10 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ profiles }) => {
         <div className="flex gap-2">
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || !selectedProfile || !csvHeaders.length || isUploading || profiles.length === 0}
+            disabled={!selectedFile || !csvHeaders.length || isUploading}
             className="flex-1"
           >
-            {isUploading ? 'Processing...' : profiles.length === 0 ? 'Connect Profile First' : 'Upload & Import'}
+            {isUploading ? 'Processing...' : 'Upload & Import'}
           </Button>
           {(selectedFile || importStatus) && (
             <Button variant="outline" onClick={reset} disabled={isUploading}>

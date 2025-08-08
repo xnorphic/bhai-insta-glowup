@@ -8,12 +8,13 @@ const corsHeaders = {
 interface CSVImportRequest {
   file: string; // Base64 encoded CSV content
   filename: string;
-  profile_id: string;
+  profile_id?: string; // Optional for multi-profile uploads
   field_mapping: Record<string, string>;
   import_settings?: {
     skip_header: boolean;
     delimiter: string;
     update_existing: boolean;
+    multi_profile?: boolean; // Flag to indicate multi-profile upload
   };
 }
 
@@ -48,20 +49,22 @@ Deno.serve(async (req) => {
     console.log('File:', requestData.filename);
     console.log('Profile ID:', requestData.profile_id);
 
-    // Verify user owns the profile
-    const { data: profile, error: profileError } = await supabase
-      .from('instagram_profiles')
-      .select('id, username')
-      .eq('profile_id', requestData.profile_id)
-      .eq('user_id', user.id)
-      .single();
+    // For single profile mode, verify user owns the profile
+    if (requestData.profile_id && !requestData.import_settings?.multi_profile) {
+      const { data: profile, error: profileError } = await supabase
+        .from('instagram_profiles')
+        .select('id, username')
+        .eq('profile_id', requestData.profile_id)
+        .eq('user_id', user.id)
+        .single();
 
-    if (profileError || !profile) {
-      console.error('Profile verification error:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'Profile not found or access denied' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (profileError || !profile) {
+        console.error('Profile verification error:', profileError);
+        return new Response(
+          JSON.stringify({ error: 'Profile not found or access denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Decode and parse CSV
@@ -148,13 +151,51 @@ Deno.serve(async (req) => {
       const rowData: Record<string, string> = {};
       headers.forEach((header, index) => {
         const mappedField = requestData.field_mapping[header];
-        if (mappedField) {
+        if (mappedField && mappedField !== 'skip') {
           rowData[mappedField] = values[index];
         }
       });
 
-      // Validate required fields
+      // For multi-profile uploads, determine the profile_id for this row
+      let currentProfileId = requestData.profile_id;
       let hasErrors = false;
+      
+      if (requestData.import_settings?.multi_profile) {
+        if (rowData.profile_id) {
+          currentProfileId = rowData.profile_id;
+        } else if (rowData.username) {
+          // Look up profile_id by username for user's profiles
+          const { data: userProfiles } = await supabase
+            .from('instagram_profiles')
+            .select('profile_id, username')
+            .eq('user_id', user.id)
+            .eq('username', rowData.username);
+          
+          if (userProfiles && userProfiles.length > 0) {
+            currentProfileId = userProfiles[0].profile_id;
+          } else {
+            validationErrors.push({
+              row: i + (settings.skip_header ? 2 : 1),
+              field: 'username',
+              error: `Username '${rowData.username}' not found in connected profiles`
+            });
+            hasErrors = true;
+          }
+        } else {
+          validationErrors.push({
+            row: i + (settings.skip_header ? 2 : 1),
+            error: 'Missing profile identification (profile_id or username required for multi-profile CSV)'
+          });
+          hasErrors = true;
+        }
+      }
+
+      // Add the determined profile_id to row data
+      if (currentProfileId) {
+        rowData.target_profile_id = currentProfileId;
+      }
+
+      // Validate required fields
       for (const required of requiredFields) {
         if (!rowData[required] || rowData[required].trim() === '') {
           validationErrors.push({
@@ -283,8 +324,9 @@ Deno.serve(async (req) => {
 
     // If validation passed, start processing
     if (validationErrors.length === 0 && stagingData.length > 0) {
-      // Process data transformation in background
-      EdgeRuntime.waitUntil(processImportData(supabase, importRecord.id, requestData.profile_id));
+      // For multi-profile uploads, we don't specify a single profile_id
+      const targetProfileId = requestData.import_settings?.multi_profile ? null : requestData.profile_id;
+      EdgeRuntime.waitUntil(processImportData(supabase, importRecord.id, targetProfileId));
     }
 
     return new Response(
@@ -307,14 +349,14 @@ Deno.serve(async (req) => {
   }
 });
 
-async function processImportData(supabase: any, importId: string, profileId: string) {
+async function processImportData(supabase: any, importId: string, profileId: string | null) {
   try {
     console.log('Starting data transformation for import:', importId);
     
     // Call the transformation function
     const { data: result, error } = await supabase.rpc('transform_csv_to_instagram_media', {
       import_id_param: importId,
-      profile_id_param: profileId
+      profile_id_param: profileId // Can be null for multi-profile uploads
     });
 
     if (error) {
